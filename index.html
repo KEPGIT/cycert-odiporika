@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert</title>
+<style>
+/* ================================================
+   CYCERT – ΟΔΟΙΠΟΡΙΚΑ FORM  |  SharePoint Ready
+   Compatible: GitHub Pages / Azure / IIS / Netlify
+   ================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:      #0078d4;
+  --blue-dk:   #005a9e;
+  --blue-lt:   #deecf9;
+  --green:     #107c10;
+  --green-lt:  #dff6dd;
+  --red:       #d83b01;
+  --red-lt:    #fde7e9;
+  --yellow-lt: #fff4ce;
+  --gray-bg:   #f3f2f1;
+  --gray-bd:   #c8c6c4;
+  --gray-txt:  #323130;
+  --gray-sub:  #605e5c;
+  --white:     #ffffff;
+  --shadow:    0 1.6px 3.6px rgba(0,0,0,.132),0 .3px .9px rgba(0,0,0,.108);
+}
+
+html, body {
+  width: 100%; min-height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background: var(--gray-bg);
+  color: var(--gray-txt);
+}
+
+/* ── Layout ─────────────────────────────────── */
+.page { max-width: 1160px; margin: 0 auto; padding: 16px 12px 40px; }
+
+.card {
+  background: var(--white);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+/* ── Company Header ──────────────────────────── */
+.co-header {
+  background: var(--white);
+  border-bottom: 3px solid var(--blue);
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 14px;
+  align-items: start;
+}
+.co-badge {
+  width: 56px; height: 56px;
+  background: var(--blue);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 800; font-size: 13px;
+  line-height: 1.2; letter-spacing: .5px;
+}
+.co-name { font-size: 13px; font-weight: 700; color: var(--blue-dk); text-transform: uppercase; letter-spacing: .4px; }
+.co-addr { font-size: 11px; color: var(--gray-sub); margin-top: 4px; line-height: 1.6; }
+.form-title-area { text-align: right; }
+.form-title { font-size: 20px; font-weight: 800; color: var(--blue); letter-spacing: .3px; }
+.form-title-red { color: var(--red); }
+.form-tag {
+  display: inline-block;
+  background: var(--blue-lt);
+  color: var(--blue-dk);
+  font-size: 10px; font-weight: 700;
+  padding: 2px 10px; border-radius: 12px; margin-top: 6px;
+}
+
+/* ── Section Label ───────────────────────────── */
+.sec-label {
+  background: #faf9f8;
+  border-bottom: 1px solid #edebe9;
+  padding: 11px 22px;
+  font-size: 12px; font-weight: 700;
+  color: var(--blue-dk);
+  text-transform: uppercase; letter-spacing: .5px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── Employee Info Grid ──────────────────────── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  border-top: 1px solid #edebe9;
+}
+.info-cell {
+  padding: 13px 20px;
+  border-right: 1px solid #edebe9;
+  border-bottom: 1px solid #edebe9;
+}
+.info-cell:nth-child(3n) { border-right: none; }
+.info-cell label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--gray-sub); text-transform: uppercase;
+  letter-spacing: .4px; margin-bottom: 5px;
+}
+.info-cell label .req { color: var(--red); margin-left: 2px; }
+.sp-inp {
+  width: 100%; padding: 7px 9px;
+  border: 1px solid var(--gray-bd);
+  border-radius: 2px; font-size: 14px;
+  font-family: inherit; color: var(--gray-txt);
+  background: var(--white); outline: none;
+  transition: border-color .12s;
+}
+.sp-inp:focus { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.sp-inp::placeholder { color: #a19f9d; font-style: italic; }
+
+/* ── Status Banner ───────────────────────────── */
+.banner {
+  padding: 9px 20px; font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  border-left: 4px solid var(--blue);
+  background: var(--blue-lt);
+}
+.banner.ok  { background: var(--green-lt); border-color: var(--green); color: var(--green); }
+.banner.warn{ background: var(--yellow-lt); border-color: #ffb900; }
+
+/* ── Trips Table ─────────────────────────────── */
+.tbl-wrap { padding: 0 16px 16px; overflow-x: auto; }
+.tbl {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px; margin-top: 4px;
+}
+.tbl thead tr { background: var(--blue); color: #fff; }
+.tbl thead th {
+  padding: 9px 7px; text-align: left;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .3px; white-space: nowrap;
+  border: 1px solid rgba(255,255,255,.2);
+}
+.tbl thead th.ctr { text-align: center; }
+.tbl tbody tr:nth-child(odd)  { background: var(--white); }
+.tbl tbody tr:nth-child(even) { background: #faf9f8; }
+.tbl tbody tr:hover           { background: var(--blue-lt); }
+.tbl tbody td {
+  padding: 5px 6px;
+  border: 1px solid #edebe9;
+  vertical-align: top;
+}
+.tbl tbody td.rn {
+  text-align: center; font-weight: 700;
+  color: var(--blue); width: 30px;
+  vertical-align: middle; font-size: 12px;
+}
+.tbl tfoot td {
+  padding: 9px 8px; border: 1px solid var(--gray-bd);
+  font-weight: 700; background: #f3f2f1;
+}
+.tot-lbl { text-align: right; color: var(--blue-dk); font-size: 12px; }
+.tot-val { text-align: center; color: var(--blue-dk); font-size: 14px; }
+
+/* ── Cell Inputs ─────────────────────────────── */
+.ci {
+  width: 100%; border: 1px solid transparent; border-radius: 2px;
+  padding: 5px 5px; font-size: 13px; font-family: inherit;
+  background: transparent; outline: none;
+  transition: all .12s;
+}
+.ci:focus { border-color: var(--blue); background: var(--white); box-shadow: 0 0 0 1px var(--blue); }
+.ci::placeholder { color: #a19f9d; font-style: italic; font-size: 11px; }
+.ci.dt  { width: 118px; }
+.ci.num { text-align: center; }
+.ci.km  { font-weight: 700; color: var(--blue-dk); width: 60px; }
+.ci.park{ width: 65px; }
+
+/* ── Route Cell ──────────────────────────────── */
+.rt-cell { min-width: 270px; }
+.rt-row  { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+.rt-lbl  { font-size: 10px; font-weight: 800; width: 28px; flex-shrink: 0;
+           text-transform: uppercase; letter-spacing: .3px; }
+.rt-lbl.from { color: var(--green); }
+.rt-lbl.to   { color: var(--red); }
+
+/* ── km status ───────────────────────────────── */
+.km-st { font-size: 10px; color: var(--gray-sub); min-height: 13px; margin-top: 1px; }
+.km-st.ok  { color: var(--green); font-weight: 700; }
+.km-st.err { color: var(--red); }
+
+/* ── Buttons ─────────────────────────────────── */
+.btn {
+  padding: 6px 14px; border-radius: 2px; border: none;
+  font-size: 12px; font-family: inherit; font-weight: 700;
+  cursor: pointer; transition: all .12s;
+  display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.btn-blue  { background: var(--blue);  color: #fff; }
+.btn-blue:hover { background: var(--blue-dk); }
+.btn-out   { background: var(--white); color: var(--blue); border: 1px solid var(--blue); }
+.btn-out:hover { background: var(--blue-lt); }
+.btn-green { background: var(--green-lt); color: var(--green); border: 1px solid var(--green); }
+.btn-green:hover { background: #c5edd5; }
+.btn-red   { background: var(--white); color: var(--red); border: 1px solid var(--red); }
+.btn-red:hover   { background: var(--red-lt); }
+.btn-maps  {
+  padding: 4px 8px; background: var(--blue); color: #fff;
+  border: none; border-radius: 2px; font-size: 11px; font-family: inherit;
+  font-weight: 700; cursor: pointer; transition: background .12s;
+}
+.btn-maps:hover { background: var(--blue-dk); }
+.gmaps-link {
+  display: none; margin-top: 2px;
+  font-size: 10px; color: #d93025; font-weight: 700;
+  text-decoration: none; align-items: center; gap: 2px;
+}
+.gmaps-link:hover { text-decoration: underline; }
+.gmaps-link.show { display: inline-flex; }
+
+/* ── Summary Cards ───────────────────────────── */
+.sum-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 10px; padding: 14px 20px;
+}
+.sum-card {
+  background: var(--blue-lt); border: 1px solid #c7e0f4;
+  border-radius: 4px; padding: 10px 14px; text-align: center;
+}
+.sum-card.green { background: var(--green-lt); border-color: #9fd89f; }
+.sum-card.yellow{ background: var(--yellow-lt); border-color: #ffb900; }
+.sum-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .4px; color: var(--gray-sub); }
+.sum-val { font-size: 22px; font-weight: 800; color: var(--blue-dk); margin-top: 3px; }
+.sum-card.green .sum-val  { color: var(--green); }
+.sum-card.yellow .sum-val { color: var(--red); }
+.sum-unit{ font-size: 10px; color: var(--gray-sub); margin-top: 1px; }
+
+/* ── Action Bar ──────────────────────────────── */
+.act-bar {
+  padding: 14px 20px; border-top: 1px solid #edebe9;
+  background: #faf9f8; display: flex; gap: 8px;
+  align-items: center; flex-wrap: wrap;
+}
+.last-saved { margin-left: auto; font-size: 11px; color: #a19f9d; }
+
+/* ── Signatures ──────────────────────────────── */
+.sig-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 28px; padding: 16px 22px;
+}
+.sig-box { text-align: center; }
+.sig-line {
+  border-bottom: 2px solid var(--gray-bd); height: 48px;
+  margin-bottom: 6px; position: relative;
+}
+.sig-line::before { content: 'X'; position: absolute; bottom: 4px; left: 0; color: #ccc; }
+.sig-lbl { font-size: 11px; font-weight: 700; color: var(--gray-sub); text-transform: uppercase; }
+.sig-sub { font-size: 11px; color: #a19f9d; margin-top: 2px; }
+
+/* ── Maps Modal ──────────────────────────────── */
+.m-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); z-index: 9999;
+  align-items: center; justify-content: center;
+}
+.m-overlay.on { display: flex; }
+.m-box {
+  background: var(--white); border-radius: 4px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.3);
+  width: 92%; max-width: 920px; max-height: 92vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.m-head {
+  background: #d93025; color: #fff;
+  padding: 13px 16px; display: flex;
+  align-items: center; justify-content: space-between;
+}
+.m-head-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.m-close {
+  background: none; border: none; color: #fff;
+  font-size: 20px; cursor: pointer; padding: 1px 8px;
+  border-radius: 2px; line-height: 1;
+}
+.m-close:hover { background: rgba(255,255,255,.2); }
+.m-ctrl {
+  padding: 12px 16px; border-bottom: 1px solid #edebe9;
+  background: #faf9f8; display: flex; gap: 8px;
+  align-items: flex-end; flex-wrap: wrap;
+}
+.m-inp-grp { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 150px; }
+.m-inp-grp label { font-size: 11px; font-weight: 700; color: var(--gray-sub); text-transform: uppercase; }
+.m-inp {
+  padding: 7px 9px; border: 1px solid var(--gray-bd);
+  border-radius: 2px; font-size: 13px; font-family: inherit;
+  outline: none; width: 100%;
+}
+.m-inp:focus { border-color: #d93025; box-shadow: 0 0 0 1px #d93025; }
+.btn-find {
+  padding: 8px 16px; background: #d93025; color: #fff;
+  border: none; border-radius: 2px; font-size: 13px;
+  font-family: inherit; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.btn-find:hover { background: #b31412; }
+
+.m-result {
+  padding: 9px 16px; background: var(--green-lt);
+  border-bottom: 1px solid #edebe9;
+  display: none; align-items: center;
+  justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.m-result.show { display: flex; }
+.dist-big { font-size: 22px; font-weight: 800; color: var(--green); }
+.dist-lbl { font-size: 11px; color: var(--gray-sub); }
+.dur-val  { font-size: 14px; font-weight: 700; color: var(--gray-sub); }
+.btn-use  {
+  padding: 8px 14px; background: var(--green); color: #fff;
+  border: none; border-radius: 2px; font-size: 13px;
+  font-family: inherit; font-weight: 700; cursor: pointer;
+}
+.btn-use:hover { background: #0a5a0a; }
+
+#m-frame-wrap {
+  flex: 1; min-height: 340px; background: #f3f2f1; position: relative;
+}
+#m-frame-wrap iframe { width: 100%; height: 100%; min-height: 340px; border: none; }
+.m-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: var(--gray-sub); font-size: 14px; text-align: center;
+}
+.m-placeholder svg { opacity: .25; }
+
+/* spinner */
+.ring { display: inline-block; width: 36px; height: 36px; position: relative; }
+.ring div {
+  box-sizing: border-box; display: block; position: absolute;
+  width: 28px; height: 28px; margin: 4px;
+  border: 4px solid var(--blue); border-radius: 50%;
+  animation: ringspin 1.1s cubic-bezier(.5,0,.5,1) infinite;
+  border-color: var(--blue) transparent transparent transparent;
+}
+.ring div:nth-child(1){animation-delay:-.45s}
+.ring div:nth-child(2){animation-delay:-.3s}
+.ring div:nth-child(3){animation-delay:-.15s}
+@keyframes ringspin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* ── Toast ───────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--gray-txt); color: #fff;
+  padding: 11px 16px; border-radius: 4px;
+  font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,.25);
+  z-index: 99999; opacity: 0;
+  transform: translateY(16px); transition: all .25s;
+  display: flex; align-items: center; gap: 8px;
+  max-width: 340px;
+}
+.toast.on  { opacity: 1; transform: translateY(0); }
+.toast.ok  { background: var(--green); }
+.toast.bad { background: var(--red); }
+
+/* ── Print ───────────────────────────────────── */
+@media print {
+  .act-bar, .btn-maps, .gmaps-link, .btn, .m-overlay, .toast,
+  .banner, .sec-label .btn-green { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none !important; border: 1px solid #ccc; }
+  .ci  { border-color: transparent !important; }
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media(max-width:700px){
+  .co-header   { grid-template-columns: 60px 1fr; }
+  .form-title-area { grid-column: 1/-1; text-align: left; }
+  .info-grid   { grid-template-columns: 1fr; }
+  .info-cell   { border-right: none !important; }
+  .sum-grid    { grid-template-columns: repeat(2,1fr); }
+  .sig-grid    { grid-template-columns: 1fr; gap: 16px; }
+  .m-ctrl      { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── Banner ── -->
+<div class="banner" id="banner">
+  ℹ️ <span>Συμπληρώστε τα στοιχεία σας · Χρησιμοποιήστε <strong>🗺️ Maps</strong> για αυτόματο υπολογισμό χλμ</span>
+</div>
+
+<!-- ── Main Card ── -->
+<div class="card" style="margin-top:10px;">
+
+  <!-- Company Header -->
+  <div class="co-header">
+    <div class="co-badge">CY<br>CERT</div>
+    <div>
+      <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
+      <div class="co-addr">
+        Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
+        📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b2d1d7c0c6dbd4dbd1d3c6dbdddcf2d1cbd1d7c0c69cddc0d59cd1cb">[email&#160;protected]</a>
+      </div>
+    </div>
+    <div class="form-title-area">
+      <div class="form-title">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ</div>
+      <div class="form-title form-title-red">ΟΔΟΙΠΟΡΙΚΩΝ</div>
+      <div style="font-size:11px;color:var(--gray-sub);margin-top:3px;">Travel Expense Payment Sheet</div>
+      <span class="form-tag">Ref: CYCERT-ODO-<span id="ref-num">001</span></span>
+    </div>
+  </div>
+
+  <!-- Employee Info -->
+  <div class="sec-label">👤 Στοιχεία Υπαλλήλου</div>
+  <div class="info-grid">
+    <div class="info-cell">
+      <label>Όνομα Υπαλλήλου <span class="req">*</span></label>
+      <input class="sp-inp" id="f-name"   type="text"   placeholder="π.χ. Γεώργιος Παπαδόπουλος">
+    </div>
+    <div class="info-cell">
+      <label>Θέση <span class="req">*</span></label>
+      <input class="sp-inp" id="f-pos"    type="text"   placeholder="π.χ. Ελεγκτής Ποιότητας">
+    </div>
+    <div class="info-cell">
+      <label>Αρ. Εγγραφής &amp; Τύπος Οχήματος <span class="req">*</span></label>
+      <input class="sp-inp" id="f-veh"    type="text"   placeholder="π.χ. Toyota Corolla – ΑΒΓ 1234">
+    </div>
+    <div class="info-cell">
+      <label>Μήνας / Περίοδος</label>
+      <input class="sp-inp" id="f-period" type="month">
+    </div>
+    <div class="info-cell">
+      <label>Τμήμα</label>
+      <input class="sp-inp" id="f-dept"   type="text"   placeholder="π.χ. Πιστοποίηση – ISO">
+    </div>
+    <div class="info-cell">
+      <label>Τιμή / Χλμ (€)</label>
+      <input class="sp-inp" id="f-rate"   type="number" value="0.17" step="0.01" min="0" max="5" style="max-width:110px;" oninput="recalc()">
+    </div>
+  </div>
+
+  <!-- Trips -->
+  <div class="sec-label">
+    🗺️ Λεπτομέρειες Ταξιδιών
+    <button class="btn btn-green" onclick="addRow(true)" style="font-size:11px;padding:3px 10px;">➕ Νέα Γραμμή</button>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl" id="tbl">
+      <thead>
+        <tr>
+          <th class="ctr" style="width:30px;">#</th>
+          <th style="width:118px;">📅 Ημερομηνία</th>
+          <th>📍 Αναχώρηση / Προορισμός &amp; Σκοπός Ταξιδιού</th>
+          <th class="ctr" style="width:82px;">🅿️ Parking €</th>
+          <th class="ctr" style="width:76px;">📏 Km</th>
+          <th class="ctr" style="width:88px;">🗺️ Χάρτης</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="tot-lbl">ΣΥΝΟΛΟ / TOTAL</td>
+          <td class="tot-val" id="t-park">€ 0.00</td>
+          <td class="tot-val" id="t-km">0 km</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tot-lbl" style="color:var(--green);">💰 ΑΜΟΙΒΗ ΟΔΟΙΠΟΡΙΚΩΝ (km × €/km)</td>
+          <td colspan="2" class="tot-val" id="t-amt" style="color:var(--green);font-size:15px;">€ 0.00</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tot-lbl">🧾 ΓΕΝΙΚΟ ΣΥΝΟΛΟ (Αμοιβή + Parking)</td>
+          <td colspan="2" class="tot-val" id="t-tot" style="font-size:15px;">€ 0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="sum-grid">
+    <div class="sum-card">
+      <div class="sum-lbl">Σύνολο Χλμ</div>
+      <div class="sum-val" id="s-km">0</div>
+      <div class="sum-unit">χιλιόμετρα</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Τιμή / Χλμ</div>
+      <div class="sum-val" id="s-rate">€0.17</div>
+      <div class="sum-unit">ανά χιλιόμετρο</div>
+    </div>
+    <div class="sum-card green">
+      <div class="sum-lbl">Αμοιβή Km</div>
+      <div class="sum-val" id="s-amt">€ 0.00</div>
+      <div class="sum-unit">km × τιμή/km</div>
+    </div>
+    <div class="sum-card yellow">
+      <div class="sum-lbl">Γενικό Σύνολο</div>
+      <div class="sum-val" id="s-tot">€ 0.00</div>
+      <div class="sum-unit">αμοιβή + parking</div>
+    </div>
+  </div>
+
+  <!-- Signatures -->
+  <div class="sec-label">✍️ Υπογραφές</div>
+  <div class="sig-grid">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Υπογραφή Υπαλλήλου</div>
+      <div class="sig-sub">Employee Signature</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Διευθυντής / Προϊστάμενος</div>
+      <div class="sig-sub">Manager / Supervisor</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Λογιστήριο</div>
+      <div class="sig-sub">Accounting Department</div>
+    </div>
+  </div>
+  <div style="padding:10px 22px 14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;border-top:1px solid #edebe9;">
+    <span style="font-size:11px;color:var(--gray-sub);">
+      Ημερομηνία Υποβολής:
+      <input type="date" class="sp-inp" style="width:155px;display:inline-block;font-size:11px;margin-left:4px;">
+    </span>
+    <span style="font-size:11px;color:var(--gray-sub);">
+      Αρ. Εντύπου:
+      <input type="text" class="sp-inp" style="width:110px;display:inline-block;font-size:11px;margin-left:4px;" placeholder="CYC-0001">
+    </span>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="act-bar">
+    <button class="btn btn-blue"  onclick="doSave()">💾 Αποθήκευση</button>
+    <button class="btn btn-out"   onclick="calcAll()">🗺️ Υπολογισμός Όλων</button>
+    <button class="btn btn-out"   onclick="window.print()">🖨️ Εκτύπωση / PDF</button>
+    <button class="btn btn-red"   onclick="doClear()">🗑️ Εκκαθάριση</button>
+    <span class="last-saved">Αποθήκευση: <span id="last-save-time">–</span></span>
+  </div>
+</div>
+</div><!-- /page -->
+
+
+<!-- ════════════════════════════════════════════
+     GOOGLE MAPS MODAL
+════════════════════════════════════════════ -->
+<div class="m-overlay" id="m-overlay">
+  <div class="m-box">
+
+    <div class="m-head">
+      <div class="m-head-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+        Google Maps – Υπολογισμός Απόστασης (Κύπρος)
+      </div>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="m-ctrl">
+      <div class="m-inp-grp">
+        <label>🟢 Αναχώρηση (From)</label>
+        <input class="m-inp" id="m-from" type="text" placeholder="π.χ. Λευκωσία, Κύπρος">
+      </div>
+      <div class="m-inp-grp">
+        <label>🔴 Προορισμός (To)</label>
+        <input class="m-inp" id="m-to"   type="text" placeholder="π.χ. Λεμεσός, Κύπρος">
+      </div>
+      <button class="btn-find" onclick="findRoute()">🔍 Εύρεση Διαδρομής</button>
+    </div>
+
+    <div class="m-result" id="m-result">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div>
+          <div class="dist-big" id="m-dist">– km</div>
+          <div class="dist-lbl">Απόσταση οδήγησης</div>
+        </div>
+        <div style="border-left:2px solid #edebe9;padding-left:20px;">
+          <div class="dur-val" id="m-dur">–</div>
+          <div class="dist-lbl">Εκτιμώμενος χρόνος</div>
+        </div>
+        <div style="border-left:2px solid #edebe9;padding-left:20px;" id="m-route-info">
+          <div style="font-size:12px;color:var(--gray-sub);max-width:180px;line-height:1.4;"></div>
+        </div>
+      </div>
+      <button class="btn-use" onclick="useKm()">✅ Χρήση αυτής της Απόστασης</button>
+    </div>
+
+    <div id="m-frame-wrap">
+      <div class="m-placeholder" id="m-ph">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="#0078d4">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+        <div>Εισάγετε αναχώρηση &amp; προορισμό<br>και πατήστε <strong>Εύρεση Διαδρομής</strong></div>
+      </div>
+      <iframe id="m-iframe" src="" style="display:none;"
+        width="100%" height="400" frameborder="0"
+        allowfullscreen loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+var rowCount = 0;
+var activeRow = null;
+var foundKm   = null;
+var toastTmr;
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+(function init(){
+  var now = new Date();
+  document.getElementById('f-period').value =
+    now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('ref-num').textContent =
+    String(Math.floor(Math.random()*900)+100);
+  for(var i=0;i<15;i++) addRow(false);
+  recalc();
+})();
+
+/* ═══════════════════════════════════════════════════
+   ROW MANAGEMENT
+═══════════════════════════════════════════════════ */
+function addRow(animate){
+  rowCount++;
+  var r = rowCount;
+  var tbody = document.getElementById('tbody');
+  var tr = document.createElement('tr');
+  tr.id = 'tr-'+r;
+  tr.innerHTML =
+    '<td class="rn">'+r+'</td>'+
+    '<td><input type="date" class="ci dt" id="d-'+r+'" oninput="recalc()"></td>'+
+    '<td class="rt-cell">'+
+      '<div class="rt-row">'+
+        '<span class="rt-lbl from">ΑΠΟ</span>'+
+        '<input type="text" class="ci" id="fr-'+r+'" placeholder="Αναχώρηση…" style="flex:1;" oninput="recalc()">'+
+      '</div>'+
+      '<div class="rt-row">'+
+        '<span class="rt-lbl to">ΠΡΟΣ</span>'+
+        '<input type="text" class="ci" id="to-'+r+'" placeholder="Προορισμός…" style="flex:1;" oninput="recalc()">'+
+      '</div>'+
+      '<input type="text" class="ci" id="pu-'+r+'" placeholder="Σκοπός ταξιδιού…" style="font-size:11px;color:var(--gray-sub);font-style:italic;margin-top:2px;">'+
+    '</td>'+
+    '<td style="text-align:center;">'+
+      '<input type="number" class="ci num park" id="pk-'+r+'" placeholder="0.00" min="0" step="0.01" oninput="recalc()">'+
+    '</td>'+
+    '<td style="text-align:center;">'+
+      '<input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()">'+
+      '<div class="km-st" id="ks-'+r+'"></div>'+
+    '</td>'+
+    '<td style="text-align:center;vertical-align:middle;">'+
+      '<button class="btn-maps" onclick="openModal('+r+')">🗺️ Maps</button><br>'+
+      '<a class="gmaps-link" id="gl-'+r+'" href="#" target="_blank" rel="noopener">🔗 Ver mapa</a>'+
+    '</td>';
+  if(animate){
+    tr.style.opacity='0';
+    tr.style.transform='translateY(-8px)';
+  }
+  tbody.appendChild(tr);
+  if(animate){
+    setTimeout(function(){
+      tr.style.transition='opacity .25s,transform .25s';
+      tr.style.opacity='1';
+      tr.style.transform='translateY(0)';
+    },10);
+    toast('✅ Νέα γραμμή προστέθηκε!','ok');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   TOTALS
+═══════════════════════════════════════════════════ */
+function recalc(){
+  var totKm=0, totPk=0;
+  var rate = parseFloat(document.getElementById('f-rate').value)||0.17;
+  for(var i=1;i<=rowCount;i++){
+    var km=parseFloat((document.getElementById('km-'+i)||{}).value)||0;
+    var pk=parseFloat((document.getElementById('pk-'+i)||{}).value)||0;
+    totKm+=km; totPk+=pk;
+  }
+  var amt   = totKm*rate;
+  var grand = amt+totPk;
+  set('t-park','€ '+totPk.toFixed(2));
+  set('t-km',  totKm.toFixed(1)+' km');
+  set('t-amt', '€ '+amt.toFixed(2));
+  set('t-tot', '€ '+grand.toFixed(2));
+  set('s-km',  totKm.toFixed(1));
+  set('s-rate','€'+rate.toFixed(2));
+  set('s-amt', '€ '+amt.toFixed(2));
+  set('s-tot', '€ '+grand.toFixed(2));
+}
+function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+
+/* ═══════════════════════════════════════════════════
+   MODAL – OPEN / CLOSE
+═══════════════════════════════════════════════════ */
+function openModal(r){
+  activeRow  = r;
+  foundKm    = null;
+  var fromV  = (document.getElementById('fr-'+r)||{value:''}).value;
+  var toV    = (document.getElementById('to-'+r)||{value:''}).value;
+  document.getElementById('m-from').value = fromV;
+  document.getElementById('m-to').value   = toV;
+  document.getElementById('m-result').classList.remove('show');
+  document.getElementById('m-iframe').style.display='none';
+  document.getElementById('m-ph').style.display='flex';
+  document.getElementById('m-ph').innerHTML=
+    '<svg width="60" height="60" viewBox="0 0 24 24" fill="#0078d4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'+
+    '<div>Εισάγετε αναχώρηση &amp; προορισμό<br>και πατήστε <strong>Εύρεση Διαδρομής</strong></div>';
+  document.getElementById('m-overlay').classList.add('on');
+  if(fromV && toV) setTimeout(findRoute,250);
+}
+function closeModal(){
+  document.getElementById('m-overlay').classList.remove('on');
+  document.getElementById('m-iframe').src='';
+  activeRow=null; foundKm=null;
+}
+
+/* ═══════════════════════════════════════════════════
+   FIND ROUTE
+═══════════════════════════════════════════════════ */
+function findRoute(){
+  var from = document.getElementById('m-from').value.trim();
+  var to   = document.getElementById('m-to').value.trim();
+  if(!from||!to){ toast('⚠️ Εισάγετε αναχώρηση και προορισμό','bad'); return; }
+
+  /* loading spinner */
+  document.getElementById('m-ph').style.display='flex';
+  document.getElementById('m-ph').innerHTML='<div class="ring"><div></div><div></div><div></div><div></div></div><div>Φόρτωση…</div>';
+  document.getElementById('m-iframe').style.display='none';
+  document.getElementById('m-result').classList.remove('show');
+
+  /* Google Maps iframe embed (no API key – basic directions view) */
+  var embedSrc = 'https://maps.google.com/maps?saddr='+encodeURIComponent(from)+'&daddr='+encodeURIComponent(to)+'&t=&z=9&output=embed&iwloc=';
+  var fr = document.getElementById('m-iframe');
+  fr.onload = function(){
+    document.getElementById('m-ph').style.display='none';
+    fr.style.display='block';
+  };
+  fr.src = embedSrc;
+
+  /* Distance calculation via Nominatim + OSRM (free, no key needed) */
+  calcDist(from, to);
+}
+
+async function calcDist(from, to){
+  try {
+    var gFrom = await geocode(from);
+    var gTo   = await geocode(to);
+    if(!gFrom||!gTo){ toast('⚠️ Αδυναμία εύρεσης τοποθεσίας.','bad'); return; }
+
+    var url = 'https://router.project-osrm.org/route/v1/driving/'+
+      gFrom.lon+','+gFrom.lat+';'+gTo.lon+','+gTo.lat+'?overview=false';
+    var resp = await fetch(url);
+    var data = await resp.json();
+
+    if(data.code==='Ok' && data.routes.length){
+      var km   = (data.routes[0].distance/1000).toFixed(1);
+      var mins = Math.round(data.routes[0].duration/60);
+      var h    = Math.floor(mins/60), m=mins%60;
+      var dur  = h>0 ? h+'ω '+m+'λ' : m+' λεπτά';
+      foundKm  = parseFloat(km);
+      document.getElementById('m-dist').textContent = km+' km';
+      document.getElementById('m-dur').textContent  = dur;
+      document.getElementById('m-route-info').innerHTML =
+        '<div style="font-size:12px;color:var(--gray-sub);line-height:1.4;">'+
+          '📍 '+gFrom.name+'<br>➡️ '+gTo.name+'</div>';
+      document.getElementById('m-result').classList.add('show');
+    } else {
+      toast('⚠️ Δεν βρέθηκε διαδρομή.','bad');
+    }
+  } catch(e){
+    toast('⚠️ Σφάλμα σύνδεσης. Εισάγετε χλμ χειροκίνητα.','bad');
+  }
+}
+
+async function geocode(place){
+  try{
+    var q = /κυπρ|cyprus|nicosia|λεμεσ|λεμεσός|λάρνακ|πάφ|αμμόχ/i.test(place)
+      ? place : place+', Κύπρος';
+    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=1',
+      { headers:{'Accept-Language':'el'} });
+    var d = await r.json();
+    if(d.length) return {lat:d[0].lat, lon:d[0].lon, name:d[0].display_name.split(',')[0]};
+    return null;
+  }catch(e){ return null; }
+}
+
+/* ═══════════════════════════════════════════════════
+   USE CALCULATED KM
+═══════════════════════════════════════════════════ */
+function useKm(){
+  if(!foundKm||!activeRow) return;
+  var r = activeRow;
+  var inp = document.getElementById('km-'+r);
+  if(inp){
+    inp.value = foundKm;
+    inp.style.transition='background .3s';
+    inp.style.background='#dff6dd';
+    setTimeout(function(){ inp.style.background='transparent'; },1500);
+  }
+  var st = document.getElementById('ks-'+r);
+  if(st){ st.textContent='✅ '+foundKm+' km (Maps)'; st.className='km-st ok'; }
+
+  /* sync from/to back to row */
+  var fv = document.getElementById('m-from').value;
+  var tv = document.getElementById('m-to').value;
+  var frEl = document.getElementById('fr-'+r);
+  var toEl = document.getElementById('to-'+r);
+  if(frEl && !frEl.value) frEl.value=fv;
+  if(toEl && !toEl.value) toEl.value=tv;
+
+  /* Google Maps link */
+  var lnk = document.getElementById('gl-'+r);
+  if(lnk){
+    lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(fv)+'/'+encodeURIComponent(tv);
+    lnk.textContent='🔗 Google Maps';
+    lnk.classList.add('show');
+  }
+  recalc();
+  closeModal();
+  toast('✅ '+foundKm+' km → Γραμμή '+r,'ok');
+}
+
+/* ═══════════════════════════════════════════════════
+   CALC ALL ROWS (batch)
+═══════════════════════════════════════════════════ */
+async function calcAll(){
+  toast('⏳ Υπολογισμός διαδρομών…','');
+  var cnt=0;
+  for(var i=1;i<=rowCount;i++){
+    var frEl=document.getElementById('fr-'+i);
+    var toEl=document.getElementById('to-'+i);
+    var kmEl=document.getElementById('km-'+i);
+    if(!frEl||!toEl||!kmEl) continue;
+    var f=frEl.value.trim(), t=toEl.value.trim();
+    if(!f||!t||kmEl.value) continue;
+    try{
+      var gF=await geocode(f), gT=await geocode(t);
+      if(!gF||!gT) continue;
+      await sleep(900);
+      var url='https://router.project-osrm.org/route/v1/driving/'+gF.lon+','+gF.lat+';'+gT.lon+','+gT.lat+'?overview=false';
+      var resp=await fetch(url);
+      var data=await resp.json();
+      if(data.code==='Ok'&&data.routes.length){
+        var km=(data.routes[0].distance/1000).toFixed(1);
+        kmEl.value=km;
+        var st=document.getElementById('ks-'+i);
+        if(st){st.textContent='✅ '+km+' km';st.className='km-st ok';}
+        var lnk=document.getElementById('gl-'+i);
+        if(lnk){lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(f)+'/'+encodeURIComponent(t);lnk.classList.add('show');}
+        cnt++;
+      }
+    }catch(e){}
+  }
+  recalc();
+  toast('✅ Υπολογίστηκαν '+cnt+' διαδρομές!','ok');
+}
+function sleep(ms){ return new Promise(function(r){setTimeout(r,ms);}); }
+
+/* ═══════════════════════════════════════════════════
+   SAVE / CLEAR / PRINT
+═══════════════════════════════════════════════════ */
+function doSave(){
+  var n=document.getElementById('f-name').value.trim();
+  var p=document.getElementById('f-pos').value.trim();
+  var v=document.getElementById('f-veh').value.trim();
+  if(!n||!p||!v){
+    toast('⚠️ Συμπληρώστε: Όνομα, Θέση και Όχημα.','bad'); return;
+  }
+  var now=new Date();
+  set('last-save-time', now.toLocaleString('el-GR',{dateStyle:'short',timeStyle:'short'}));
+  var b=document.getElementById('banner');
+  b.className='banner ok';
+  b.innerHTML='✅ <span>Αποθηκεύτηκε στις <strong>'+now.toLocaleTimeString('el-GR')+'</strong></span>';
+  toast('✅ Αποθηκεύτηκε!','ok');
+}
+function doClear(){
+  if(!confirm('Εκκαθάριση όλων των δεδομένων;')) return;
+  ['f-name','f-pos','f-veh','f-dept'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.value='';
+  });
+  for(var i=1;i<=rowCount;i++){
+    ['d-','fr-','to-','pu-','pk-','km-'].forEach(function(p){
+      var e=document.getElementById(p+i); if(e) e.value='';
+    });
+    var s=document.getElementById('ks-'+i); if(s){s.textContent='';s.className='km-st';}
+    var l=document.getElementById('gl-'+i); if(l) l.classList.remove('show');
+  }
+  recalc();
+  toast('🗑️ Εκκαθαρίστηκε.','');
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+function toast(msg, type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type||'');
+  void t.offsetWidth;
+  t.classList.add('on');
+  clearTimeout(toastTmr);
+  toastTmr=setTimeout(function(){ t.classList.remove('on'); },3500);
+}
+
+/* ═══════════════════════════════════════════════════
+   KEYBOARD
+═══════════════════════════════════════════════════ */
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape') closeModal();
+  if((e.ctrlKey||e.metaKey) && e.key==='s'){ e.preventDefault(); doSave(); }
+});
+document.getElementById('m-overlay').addEventListener('click', function(e){
+  if(e.target===this) closeModal();
+});
+
+/* enter key in modal inputs triggers search */
+['m-from','m-to'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown',function(e){
+    if(e.key==='Enter') findRoute();
+  });
+});
+</script>
+</body>
+</html>
