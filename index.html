@@ -645,20 +645,77 @@ function saveM365ConfigToStorage(){
 }
 
 /* ── MSAL INIT ── */
-function initMSAL(){
-  if(!M365_CFG.configured||!M365_CFG.clientId||!M365_CFG.tenantId){return false;}
-  try{
-    var msalConfig={
-      auth:{
-        clientId:M365_CFG.clientId,
-        authority:'https://login.microsoftonline.com/'+M365_CFG.tenantId,
-        redirectUri:window.location.origin+window.location.pathname
+function initMSAL() {
+  try {
+    // 1. Έλεγχος αν υπάρχουν ρυθμίσεις
+    if (!M365_CFG.configured) {
+      console.error("MSAL init error: Configuration flag is false");
+      toast("⚠️ Δεν έχει ενεργοποιηθεί το Microsoft 365 (configured=false)", "bad");
+      return false;
+    }
+    if (!M365_CFG.clientId) {
+      console.error("MSAL init error: Missing Client ID");
+      toast("⚠️ Δεν δόθηκε Application (Client) ID", "bad");
+      return false;
+    }
+    if (!M365_CFG.tenantId) {
+      console.error("MSAL init error: Missing Tenant ID");
+      toast("⚠️ Δεν δόθηκε Directory (Tenant) ID", "bad");
+      return false;
+    }
+
+    // 2. Δημιουργούμε MSAL config
+    const redirect = window.location.origin + window.location.pathname;
+
+    const msalConfig = {
+      auth: {
+        clientId: M365_CFG.clientId,
+        authority: "https://login.microsoftonline.com/" + M365_CFG.tenantId,
+        redirectUri: redirect
       },
-      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}
+      cache: {
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: true
+      },
+      system: {
+        loggerOptions: {
+          loggerCallback: (level, message) => {
+            console.log("[MSAL]", message);
+          },
+          logLevel: msal.LogLevel.Verbose,
+          piiLoggingEnabled: false
+        }
+      }
     };
-    msalInstance=new msal.PublicClientApplication(msalConfig);
+
+    // 3. Έλεγχος αν η βιβλιοθήκη msal-browser είναι φορτωμένη
+    if (typeof msal === "undefined" || !msal.PublicClientApplication) {
+      console.error("MSAL init error: msal-browser library not loaded");
+      toast("❌ Η βιβλιοθήκη MSAL δεν φορτώθηκε. Ελέγξτε το CDN.", "bad");
+      return false;
+    }
+
+    // 4. Δημιουργία MSAL instance
+    msalInstance = new msal.PublicClientApplication(msalConfig);
+
+    console.log("%c✅ MSAL initialised successfully", "color: green; font-weight: bold;");
     return true;
-  }catch(e){console.error('MSAL init error:',e);return false;}
+
+  } catch (err) {
+    console.error("MSAL init exception:", err);
+
+    let msg = err.errorMessage || err.message || "Άγνωστο σφάλμα MSAL";
+
+    if (msg.includes("redirect_uri")) {
+      toast("⚠️ Το redirect URI δεν ταιριάζει με το Azure AD App Registration", "bad");
+    } else if (msg.includes("authority")) {
+      toast("⚠️ Λάθος Tenant ID ή Authority URL", "bad");
+    } else {
+      toast("❌ Σφάλμα MSAL: " + msg, "bad");
+    }
+
+    return false;
+  }
 }
 
 async function getAccessToken(){
