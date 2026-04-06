@@ -10,8 +10,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- MSAL.js for Microsoft 365 authentication -->
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<!-- MSAL.js for Microsoft 365 authentication (jsdelivr CDN - reliable) -->
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script>
+// Verify MSAL loaded
+window.addEventListener('load',function(){
+  if(typeof msal==='undefined'){
+    console.error('[CyCert] MSAL library failed to load!');
+  }else{
+    console.log('[CyCert] MSAL',msal.version||'2.x','loaded OK');
+  }
+});
+</script>
 
 <style>
 /* ====================================================
@@ -321,7 +331,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
     <div>
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="87e4e2f5f3eee1eee4e6f3eee8e9c7e4fee4e2f5f3a9e8f5e0a9e4fe">[email&#160;protected]</a></div>
+      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7b4b2a5a3beb1beb4b6a3beb8b997b4aeb4b2a5a3f9b8a5b0f9b4ae">[email&#160;protected]</a></div>
     </div>
     <div class="form-title-area">
       <div class="form-title">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ</div>
@@ -548,7 +558,9 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
           Χρησιμοποιήστε τον λογαριασμό Microsoft 365 της εταιρείας σας για <strong>αυτόματη αποστολή</strong> email με το PDF και τις αποδείξεις ως συνημμένα. Απαιτεί εγγραφή εφαρμογής στο Azure Active Directory (μία φορά από τον IT).
           <br><br>
           <strong>📋 Οδηγίες ρύθμισης Azure AD:</strong>
-          Δείτε το αρχείο <strong>GRAPH_SETUP_GUIDE.html</strong> που συνοδεύει αυτήν την εφαρμογή για αναλυτικές οδηγίες βήμα προς βήμα.
+          Δείτε το αρχείο <strong>GRAPH_SETUP_GUIDE.html</strong> για αναλυτικές οδηγίες.<br><br>
+          <strong>⚠️ Redirect URI για Azure:</strong> Κατά την εγγραφή στο Azure AD, χρησιμοποιήστε ως Redirect URI την παρακάτω διεύθυνση (SPA platform):<br>
+          <code id="cfg-redirect-uri" style="background:#1e1e1e;color:#d4d4d4;padding:3px 6px;border-radius:3px;font-size:11px;display:inline-block;margin-top:4px;word-break:break-all;">φορτώνεται…</code>
         </div>
         <div class="cfg-row">
           <label>Application (Client) ID:</label>
@@ -647,39 +659,104 @@ function saveM365ConfigToStorage(){
 /* ── MSAL INIT ── */
 function initMSAL(){
   if(!M365_CFG.configured||!M365_CFG.clientId||!M365_CFG.tenantId){return false;}
+
+  // ── Verify MSAL library is actually loaded ──
+  if(typeof msal==='undefined'){
+    throw new Error(
+      'Η βιβλιοθήκη MSAL δεν φορτώθηκε (δεν υπάρχει σύνδεση ή το CDN απέτυχε). '+
+      'Ελέγξτε τη σύνδεση internet και ανανεώστε τη σελίδα.'
+    );
+  }
+
+  // ── Build redirect URI (must match Azure AD registration exactly) ──
+  var redirectUri=window.location.origin+window.location.pathname;
+  // Ensure trailing slash consistency
+  if(!redirectUri.endsWith('/'))redirectUri+='/';
+
   try{
     var msalConfig={
       auth:{
         clientId:M365_CFG.clientId,
         authority:'https://login.microsoftonline.com/'+M365_CFG.tenantId,
-        redirectUri:window.location.origin+window.location.pathname
+        redirectUri:redirectUri
       },
-      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}
+      cache:{
+        cacheLocation:'localStorage',
+        storeAuthStateInCookie:true
+      },
+      system:{
+        allowRedirectInIframe:true,   // Required when inside SharePoint iframe
+        windowHashTimeout:9000,
+        iframeHashTimeout:9000,
+        loggerOptions:{
+          loggerCallback:function(level,msg,containsPii){
+            if(!containsPii)console.log('[MSAL]',msg);
+          },
+          piiLoggingEnabled:false
+        }
+      }
     };
     msalInstance=new msal.PublicClientApplication(msalConfig);
+    console.log('[CyCert] MSAL initialised. Redirect URI:',redirectUri);
     return true;
-  }catch(e){console.error('MSAL init error:',e);return false;}
+  }catch(e){
+    console.error('[CyCert] MSAL constructor error:',e);
+    throw new Error('MSAL αρχικοποίηση απέτυχε: '+e.message);
+  }
 }
 
 async function getAccessToken(){
-  if(!msalInstance)throw new Error('MSAL not initialised');
+  if(!msalInstance)throw new Error('MSAL δεν έχει αρχικοποιηθεί. Αποθηκεύστε τις ρυθμίσεις πρώτα.');
   var scopes=['https://graph.microsoft.com/Mail.Send'];
   var accounts=msalInstance.getAllAccounts();
   if(accounts.length>0){
     try{
       var r=await msalInstance.acquireTokenSilent({scopes:scopes,account:accounts[0]});
       return r.accessToken;
-    }catch(e){}
+    }catch(e){
+      console.warn('[CyCert] Silent token failed, falling back to popup:',e.message);
+    }
   }
-  var r=await msalInstance.loginPopup({scopes:scopes,prompt:'select_account'});
-  return r.accessToken;
+  try{
+    var r=await msalInstance.loginPopup({
+      scopes:scopes,
+      prompt:'select_account',
+      popupWindowAttributes:{
+        popupSize:{width:500,height:600},
+        popupPosition:{top:100,left:200}
+      }
+    });
+    return r.accessToken;
+  }catch(e){
+    if(e.errorCode==='popup_window_error'||e.message.indexOf('popup')>-1){
+      throw new Error(
+        'Το popup για σύνδεση Microsoft μπλοκαρίστηκε από τον browser. '+
+        'Κλικ στο εικονίδιο 🚫 ή 🔒 στη γραμμή διευθύνσεων → "Allow popups" και δοκιμάστε ξανά.'
+      );
+    }
+    throw e;
+  }
 }
 
 /* ── INIT ── */
 (function(){
   loadM365Config();
-  if(initMSAL()){
+
+  // Show the actual redirect URI so user can copy it into Azure
+  var redirectUri=window.location.origin+window.location.pathname;
+  if(!redirectUri.endsWith('/'))redirectUri+='/';
+  var ruEl=document.getElementById('cfg-redirect-uri');
+  if(ruEl)ruEl.textContent=redirectUri;
+
+  var msalOk=false;
+  try{
+    if(M365_CFG.configured)msalOk=initMSAL();
+  }catch(e){
+    console.warn('[CyCert] Auto-init MSAL failed:',e.message);
+  }
+  if(msalOk){
     sendMethod='m365';
+    selectMethod('m365');
   } else {
     sendMethod='outlook';
     selectMethod('outlook');
@@ -1293,31 +1370,59 @@ function saveM365Config(){
   }
   M365_CFG={clientId:cid,tenantId:tid,configured:true};
   saveM365ConfigToStorage();
-  initMSAL();
-  selectMethod('m365');
-  updateStatusBar();
-  document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--green);">✅ Αποθηκεύτηκε! Πατήστε "Δοκιμή Σύνδεσης" για επαλήθευση.</span>';
-  toast('✅ Microsoft 365 ρυθμίσεις αποθηκεύτηκαν','ok');
+  var statusEl=document.getElementById('cfg-m365-status');
+  try{
+    initMSAL();
+    selectMethod('m365');
+    updateStatusBar();
+    statusEl.innerHTML='<span style="color:var(--green);">✅ Αποθηκεύτηκε! Πατήστε <strong>🔐 Δοκιμή Σύνδεσης</strong> για επαλήθευση με τον Microsoft λογαριασμό σας.</span>';
+    toast('✅ Microsoft 365 ρυθμίσεις αποθηκεύτηκαν','ok');
+  }catch(e){
+    statusEl.innerHTML='<span style="color:var(--red);">⚠️ Αποθηκεύτηκε αλλά σφάλμα MSAL: '+e.message+'</span>';
+  }
 }
 
 async function testM365Login(){
   var cid=document.getElementById('cfg-client-id').value.trim();
   var tid=document.getElementById('cfg-tenant-id').value.trim();
-  if(!cid||!tid){document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--red);">⚠️ Αποθηκεύστε πρώτα τις ρυθμίσεις.</span>';return;}
-  document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--blue);">⏳ Σύνδεση…</span>';
+  if(!cid||!tid){
+    document.getElementById('cfg-m365-status').innerHTML=
+      '<span style="color:var(--red);">⚠️ Εισάγετε και τα δύο πεδία (Client ID + Tenant ID).</span>';
+    return;
+  }
+
+  var statusEl=document.getElementById('cfg-m365-status');
+  statusEl.innerHTML='<span style="color:var(--blue);">⏳ Αρχικοποίηση MSAL…</span>';
+
   try{
+    // ── Step 1: init MSAL (will throw with descriptive message if MSAL not loaded) ──
     M365_CFG={clientId:cid,tenantId:tid,configured:true};
-    if(!initMSAL())throw new Error('MSAL init failed');
+    initMSAL(); // throws on error – do NOT use if(!initMSAL())
+
+    statusEl.innerHTML='<span style="color:var(--blue);">⏳ Άνοιγμα παραθύρου Microsoft…</span>';
+
+    // ── Step 2: login popup ──
     var token=await getAccessToken();
+
     if(token){
-      document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--green);">✅ Σύνδεση επιτυχής! Το Microsoft 365 είναι έτοιμο.</span>';
       saveM365ConfigToStorage();
       selectMethod('m365');
       updateStatusBar();
+      statusEl.innerHTML=
+        '<span style="color:var(--green);">✅ Σύνδεση επιτυχής! '+
+        'Microsoft 365 έτοιμο – τα email θα σταλούν αυτόματα με συνημμένα.</span>';
+      toast('✅ Microsoft 365 συνδέθηκε επιτυχώς!','ok');
     }
   }catch(e){
-    document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--red);">❌ Σφάλμα: '+e.message+'</span>';
-    console.error(e);
+    // ── Clear bad config so initMSAL won't break next page load ──
+    M365_CFG.configured=false;
+    msalInstance=null;
+    var msg=e.message||String(e);
+    console.error('[CyCert] testM365Login error:',e);
+    statusEl.innerHTML=
+      '<div style="color:var(--red);line-height:1.7;">'+
+      '❌ <strong>Σφάλμα:</strong> '+msg+
+      '</div>';
   }
 }
 
