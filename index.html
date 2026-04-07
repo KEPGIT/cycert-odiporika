@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v5</title>
+<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v6</title>
 
 <!-- External Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- html2canvas: renders Greek text correctly in PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <!-- MSAL.js for Microsoft 365 authentication (jsdelivr CDN - reliable) -->
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 <script>
@@ -259,6 +261,9 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
 .dur-val{font-size:14px;font-weight:700;color:var(--gray-sub);}
 .btn-use{padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;}
 .btn-use:hover{background:#0a5a0a;}
+.btn-use-rt{padding:8px 14px;background:#6264a7;color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;margin-left:8px;}
+.btn-use-rt:hover{background:#4a4c8a;}
+.m-use-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 #m-frame-wrap{flex:1;min-height:340px;background:#f3f2f1;position:relative;}
 #m-frame-wrap iframe{width:100%;height:100%;min-height:340px;border:none;}
 .m-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--gray-sub);font-size:14px;text-align:center;}
@@ -331,7 +336,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
     <div>
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7b4b2a5a3beb1beb4b6a3beb8b997b4aeb4b2a5a3f9b8a5b0f9b4ae">[email&#160;protected]</a></div>
+      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c0a3a5b2b4a9a6a9a3a1b4a9afae80a3b9a3a5b2b4eeafb2a7eea3b9">[email&#160;protected]</a></div>
     </div>
     <div class="form-title-area">
       <div class="form-title">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ</div>
@@ -617,7 +622,10 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
         <div style="border-left:2px solid #edebe9;padding-left:18px;"><div class="dur-val" id="m-dur">–</div><div class="dist-lbl">χρόνος</div></div>
         <div style="border-left:2px solid #edebe9;padding-left:18px;" id="m-ri"></div>
       </div>
-      <button class="btn-use" onclick="useKm()">✅ Χρήση</button>
+      <div class="m-use-btns">
+        <button class="btn-use" onclick="useKm(1)">✅ Χρήση (A→B)</button>
+        <button class="btn-use-rt" onclick="useKm(2)">🔄 Μετ/Επιστρ. (x2)</button>
+      </div>
     </div>
     <div id="m-frame-wrap">
       <div class="m-ph" id="m-ph">
@@ -824,7 +832,7 @@ function addRow(animate){
       '<input type="text" class="ci" id="pu-'+r+'" placeholder="Σκοπός ταξιδιού…" style="font-size:11px;color:var(--gray-sub);font-style:italic;margin-top:2px;">'+
     '</td>'+
     '<td style="text-align:center;"><input type="number" class="ci num park" id="pk-'+r+'" placeholder="0.00" min="0" step="0.01" oninput="recalc()"></td>'+
-    '<td style="text-align:center;"><input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()"><div class="km-st" id="ks-'+r+'"></div></td>'+
+    '<td style="text-align:center;"><input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()"><div class="km-st" id="ks-'+r+'"></div><label style="font-size:10px;color:#6264a7;cursor:pointer;display:block;margin-top:2px;" title="Μετ/επιστροφή x2"><input type="checkbox" id="rt-'+r+'" style="margin-right:2px;"> 🔄Μ/Ε</label></td>'+
     '<td style="text-align:center;vertical-align:middle;"><button class="btn-maps" onclick="openModal('+r+')">🗺️ Maps</button><br><a class="gmaps-link" id="gl-'+r+'" href="#" target="_blank" rel="noopener">🔗 Χάρτης</a></td>'+
     '<td class="rcpt-cell"><button class="btn-attach-row" onclick="document.getElementById(\'fi-'+r+'\').click()">📎 Επισύναψη</button><span class="rcpt-count" id="rc-'+r+'"></span></td>';
   if(animate){tr.style.opacity='0';tr.style.transform='translateY(-8px)';}
@@ -898,59 +906,26 @@ function updateRowBadge(rowNum){
 }
 
 /* ═══════════════════════════════════════════
-   PDF GENERATION  (jsPDF + autoTable)
+   PDF GENERATION  (html2canvas → jsPDF)
+   FIX: Renders Greek characters correctly via browser fonts
 ═══════════════════════════════════════════ */
-function generateFormPDF(){
-  var jsPDF=window.jspdf.jsPDF;
-  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  var pw=doc.internal.pageSize.getWidth();
-  var BLUE=[0,120,212],RED=[216,59,1],GREEN=[16,124,16];
-  var GRAY=[50,49,48],GRAY_LT=[240,239,238],WHITE=[255,255,255];
 
-  // Header band
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,0,pw,28,'F');
-  doc.setFillColor(255,255,255);doc.circle(20,14,9,'F');
-  doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);doc.setFont('helvetica','bold');doc.setFontSize(7);
-  doc.text('CY',20,12,{align:'center'});doc.text('CERT',20,16,{align:'center'});
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
-  doc.text('ΚΥΠΡΙΑΚΗ ΕΤΑΙΡΕΙΑ ΠΙΣΤΟΠΟΙΗΣΗΣ',34,10);
-  doc.setFont('helvetica','normal');doc.setFontSize(7);
-  doc.text('Γωνία Λεωφόρου Λεμεσού & Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία',34,15);
-  doc.text('Τηλ: +357 22411435  |  Φαξ: +357 22 519115  |  certification@cycert.org.cy',34,19);
-  doc.setFont('helvetica','bold');doc.setFontSize(13);
-  doc.text('ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ',pw-14,10,{align:'right'});
-  doc.text('ΟΔΟΙΠΟΡΙΚΩΝ',pw-14,17,{align:'right'});
-  doc.setFont('helvetica','normal');doc.setFontSize(7);
-  doc.text('Travel Expense Payment Sheet',pw-14,22,{align:'right'});
-  doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.8);doc.line(0,28,pw,28);
-
-  var y=34;
-  // Reference band
-  doc.setFillColor(GRAY_LT[0],GRAY_LT[1],GRAY_LT[2]);doc.rect(10,y-4,pw-20,6,'F');
-  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  var ref=document.getElementById('f-form-num').value||'–';
+function buildPrintBody(){
+  var name=document.getElementById('f-name').value||'–';
+  var pos=document.getElementById('f-pos').value||'–';
+  var veh=document.getElementById('f-veh').value||'–';
+  var dept=document.getElementById('f-dept').value||'–';
   var period=document.getElementById('f-period').value||'–';
+  var ref=document.getElementById('f-form-num').value||'–';
   var submitDate=document.getElementById('f-submit-date').value||'–';
-  doc.text('Αρ. Εντύπου: '+ref,12,y);doc.text('Περίοδος: '+period,70,y);doc.text('Ημ. Υποβολής: '+submitDate,130,y);
-  y+=8;
-  // Employee info
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(10,y,pw-20,6,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('ΣΤΟΙΧΕΙΑ ΥΠΑΛΛΗΛΟΥ',12,y+4);y+=7;
-  doc.setFillColor(250,249,248);doc.rect(10,y,pw-20,16,'F');
-  doc.setDrawColor(200,198,196);doc.rect(10,y,pw-20,16,'S');
-  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','bold');doc.setFontSize(7);
-  doc.text('ΟΝΟΜΑ ΥΠΑΛΛΗΛΟΥ:',12,y+5);doc.text('ΘΕΣΗ:',12,y+11);
-  doc.setFont('helvetica','normal');
-  doc.text(document.getElementById('f-name').value||'–',55,y+5);
-  doc.text(document.getElementById('f-pos').value||'–',55,y+11);
-  doc.setFont('helvetica','bold');doc.text('ΟΧΗΜΑ:',105,y+5);doc.text('ΤΜΗΜΑ:',105,y+11);
-  doc.setFont('helvetica','normal');
-  doc.text(document.getElementById('f-veh').value||'–',125,y+5);
-  doc.text(document.getElementById('f-dept').value||'–',125,y+11);
-  y+=20;
-  // Trips table
-  var tableRows=[];
+  var rate=parseFloat(document.getElementById('f-rate').value)||0.17;
+  var totKm=document.getElementById('s-km').textContent||'0';
+  var totAmt=document.getElementById('s-amt').textContent||'EUR 0.00';
+  var totPk=document.getElementById('t-park').textContent||'EUR 0.00';
+  var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
+  var notes=document.getElementById('send-notes').value||'';
+  var rowsHtml='';
+  var rowIdx=0;
   for(var i=1;i<=rowCount;i++){
     var dv=(document.getElementById('d-'+i)||{value:''}).value;
     var fv=(document.getElementById('fr-'+i)||{value:''}).value;
@@ -959,72 +934,139 @@ function generateFormPDF(){
     var pk=(document.getElementById('pk-'+i)||{value:''}).value;
     var km=(document.getElementById('km-'+i)||{value:''}).value;
     if(!dv&&!fv&&!tv&&!km&&!pk)continue;
-    var route=fv&&tv?fv+'\n-> '+tv:(fv||tv||'–');
-    tableRows.push([i,dv||'–',route,pv||'–',pk?'EUR'+parseFloat(pk).toFixed(2):'–',km?km+' km':'–']);
+    rowIdx++;
+    var rtEl=document.getElementById('rt-'+i);
+    var rtNote=rtEl&&rtEl.checked?' <span style="color:#6264a7;font-size:10px;">(Μ/Ε)</span>':'';
+    var bg=rowIdx%2===0?'#faf9f8':'#ffffff';
+    rowsHtml+='<tr style="background:'+bg+'">';
+    rowsHtml+='<td style="text-align:center;font-weight:700;color:#0078d4;">'+i+'</td>';
+    rowsHtml+='<td>'+(dv||'–')+'</td>';
+    rowsHtml+='<td><span style="color:#107c10;font-weight:600;">'+(fv||'–')+'</span><br>→ <span style="color:#d83b01;font-weight:600;">'+(tv||'–')+'</span></td>';
+    rowsHtml+='<td>'+(pv||'–')+'</td>';
+    rowsHtml+='<td style="text-align:center;">'+(pk?'€'+parseFloat(pk).toFixed(2):'–')+'</td>';
+    rowsHtml+='<td style="text-align:center;font-weight:700;color:#0078d4;">'+(km?km+' km'+rtNote:'–')+'</td>';
+    rowsHtml+='</tr>';
   }
-  if(tableRows.length===0)tableRows.push(['–','–','–','–','–','–']);
-  doc.autoTable({
-    startY:y,
-    head:[['#','Ημερομηνία','Αναχ. / Προορισμός','Σκοπός','Parking','Km']],
-    body:tableRows,
-    theme:'grid',
-    styles:{font:'helvetica',fontSize:8,cellPadding:2.5,textColor:GRAY,lineColor:[200,198,196],lineWidth:0.3},
-    headStyles:{fillColor:BLUE,textColor:WHITE,fontStyle:'bold',fontSize:8},
-    alternateRowStyles:{fillColor:[250,249,248]},
-    columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:22},2:{cellWidth:54},3:{cellWidth:38},4:{cellWidth:18,halign:'center'},5:{cellWidth:18,halign:'center'}},
-    margin:{left:10,right:10}
-  });
-  y=doc.lastAutoTable.finalY+6;
-  // Totals box
-  var rate=parseFloat(document.getElementById('f-rate').value)||0.17;
-  var totKm=parseFloat(document.getElementById('s-km').textContent)||0;
-  var totAmt=document.getElementById('s-amt').textContent||'EUR 0.00';
-  var totPk=document.getElementById('t-park').textContent||'EUR 0.00';
-  var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
-  if(y+28>doc.internal.pageSize.getHeight()-20){doc.addPage();y=20;}
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(10,y,pw-20,6,'F');
-  doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('ΣΥΝΟΠΤΙΚΑ ΣΤΟΙΧΕΙΑ',12,y+4);y+=7;
-  doc.setFillColor(GRAY_LT[0],GRAY_LT[1],GRAY_LT[2]);doc.rect(10,y,pw-20,26,'F');
-  doc.setDrawColor(200,198,196);doc.rect(10,y,pw-20,26,'S');
-  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','normal');doc.setFontSize(8);
-  doc.text('Συν. Χλμ:',12,y+6);doc.setFont('helvetica','bold');doc.text(totKm+' km',45,y+6);
-  doc.setFont('helvetica','normal');doc.text('Τιμη/Χλμ:',12,y+12);doc.setFont('helvetica','bold');doc.text('EUR'+rate.toFixed(2),45,y+12);
-  doc.setFont('helvetica','normal');doc.text('Σύν. Parking:',12,y+18);doc.setFont('helvetica','bold');doc.text(totPk,45,y+18);
-  doc.setFont('helvetica','normal');doc.text('Αμοιβή Οδοιπορικών:',95,y+6);doc.setFont('helvetica','bold');doc.setTextColor(GREEN[0],GREEN[1],GREEN[2]);doc.text(totAmt,145,y+6);
-  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','normal');doc.text('ΓΕΝΙΚΟ ΣΥΝΟΛΟ:',95,y+15);
-  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(RED[0],RED[1],RED[2]);doc.text(grand,145,y+15);
-  y+=30;
-  // Receipts list
+  if(!rowsHtml)rowsHtml='<tr><td colspan="6" style="text-align:center;color:#999;">Δεν υπάρχουν εγγραφές</td></tr>';
+  var rcpHtml='';
   if(receipts.length>0){
-    if(y+10>doc.internal.pageSize.getHeight()-20){doc.addPage();y=20;}
-    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(10,y,pw-20,6,'F');
-    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
-    doc.text('ΕΠΙΣΥΝΑΠΤΟΜΕΝΕΣ ΑΠΟΔΕΙΞΕΙΣ ('+receipts.length+')',12,y+4);y+=8;
-    receipts.forEach(function(r,idx){
-      doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','normal');doc.setFontSize(8);
-      doc.text((idx+1)+'. '+r.name+' ('+(r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.')+') – '+(r.size/1024).toFixed(0)+' KB',12,y);y+=5;
-    });y+=4;
+    rcpHtml='<div style="margin-top:16px;background:#f3f2f1;border-left:4px solid #0078d4;padding:8px 12px;">';
+    rcpHtml+='<div style="font-weight:700;font-size:11px;color:#0078d4;margin-bottom:4px;">📎 ΕΠΙΣΥΝΑΠΤΟΜΕΝΑ ('+receipts.length+')</div>';
+    receipts.forEach(function(r,idx){rcpHtml+='<div style="font-size:11px;">'+(idx+1)+'. '+r.name+' ('+(r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.')+') – '+(r.size/1024).toFixed(0)+' KB</div>';});
+    rcpHtml+='</div>';
   }
-  // Signature lines
-  if(y+30>doc.internal.pageSize.getHeight()-15){doc.addPage();y=20;}
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(10,y,pw-20,6,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('ΥΠΟΓΡΑΦΕΣ / SIGNATURES',12,y+4);y+=10;
-  var sigW=(pw-40)/3,sigX=[10,10+sigW+10,10+sigW*2+20];
-  var sigLabels=['ΥΠΟΓΡΑΦΗ ΥΠΑΛΛΗΛΟΥ','ΔΙΕΥΘΥΝΤΗΣ / ΠΡΟΪΣΤΑΜΕΝΟΣ','ΛΟΓΙΣΤΗΡΙΟ'];
-  sigLabels.forEach(function(lbl,i){
-    doc.setDrawColor(200,198,196);doc.setLineWidth(0.5);
-    doc.line(sigX[i],y+12,sigX[i]+sigW,y+12);
-    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont('helvetica','bold');doc.setFontSize(7);
-    doc.text(lbl,sigX[i]+sigW/2,y+16,{align:'center'});
+  var notesHtml=notes?'<div style="margin-top:10px;padding:8px 12px;background:#fff4ce;border-left:3px solid #d04e00;font-size:12px;">📝 '+notes+'</div>':'';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+    +'body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#323130;margin:0;padding:0;width:794px;background:#fff;}'
+    +'.hdr{background:#0078d4;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:14px;}'
+    +'.badge{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#0078d4;flex-shrink:0;line-height:1.1;text-align:center;}'
+    +'.co-info{flex:1;}.co-name{font-size:12px;font-weight:700;}.co-addr{font-size:10px;opacity:.85;margin-top:2px;}'
+    +'.form-title-box{text-align:right;}.form-title-main{font-size:15px;font-weight:800;}.form-tag{font-size:9px;opacity:.8;}'
+    +'.ref-bar{background:#f3f2f1;padding:6px 18px;font-size:11px;display:flex;gap:24px;border-bottom:1px solid #edebe9;}'
+    +'.ref-bar span{font-weight:700;color:#0078d4;margin-right:3px;}'
+    +'.sec-hdr{background:#0078d4;color:#fff;padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:12px;}'
+    +'.emp-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
+    +'.emp-cell{padding:6px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
+    +'.emp-cell label{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;display:block;margin-bottom:1px;}'
+    +'.emp-cell .val{font-size:13px;font-weight:600;}'
+    +'table{width:100%;border-collapse:collapse;margin-top:3px;font-size:12px;}'
+    +'thead tr{background:#0078d4;color:#fff;}'
+    +'thead th{padding:6px 7px;text-align:left;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.2);}'
+    +'tbody td{padding:4px 7px;border:1px solid #edebe9;vertical-align:top;}'
+    +'.tot-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
+    +'.tot-cell{padding:7px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
+    +'.tot-cell label{font-size:10px;color:#605e5c;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px;}'
+    +'.tot-cell .tv{font-size:14px;font-weight:700;color:#0078d4;}'
+    +'.tot-cell.grand{grid-column:1/-1;border-right:none;}'
+    +'.tot-cell.grand .tv{font-size:17px;color:#d83b01;}'
+    +'.tot-cell.amt .tv{color:#107c10;}'
+    +'.sig-area{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;padding:0 8px;}'
+    +'.sig-box{text-align:center;padding-top:40px;border-top:1.5px solid #c8c6c4;font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;}'
+    +'.footer{background:#0078d4;color:#fff;text-align:center;padding:7px;font-size:10px;margin-top:18px;}'
+    +'</style></head><body>'
+    +'<div class="hdr"><div class="badge">CY<br>CERT</div>'
+    +'<div class="co-info"><div class="co-name">ΚΥΠΡΙΑΚΗ ΕΤΑΙΡΕΙΑ ΠΙΣΤΟΠΟΙΗΣΗΣ (CyCert)</div>'
+    +'<div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Ὄροφος, 2014 Λευκωσία | +357 22411435</div></div>'
+    +'<div class="form-title-box"><div class="form-title-main">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ ΟΔΟΙΠΟΡΙΚΩΝ</div>'
+    +'<div class="form-tag">Travel Expense Payment Sheet</div></div></div>'
+    +'<div class="ref-bar"><div><span>Αρ. Εντύπου:</span>'+ref+'</div><div><span>Περίοδος:</span>'+period+'</div><div><span>Ημ. Υποβολής:</span>'+submitDate+'</div></div>'
+    +'<div style="padding:0 10px;">'
+    +'<div class="sec-hdr">ΣΤΟΙΧΕΙΑ ΥΠΑΛΛΗΛΟΥ</div>'
+    +'<div class="emp-grid">'
+    +'<div class="emp-cell"><label>Ὄνομα</label><div class="val">'+name+'</div></div>'
+    +'<div class="emp-cell"><label>Θέση</label><div class="val">'+pos+'</div></div>'
+    +'<div class="emp-cell"><label>Ὄχημα</label><div class="val">'+veh+'</div></div>'
+    +'<div class="emp-cell" style="border-right:none;"><label>Τμήμα</label><div class="val">'+dept+'</div></div>'
+    +'</div>'
+    +'<div class="sec-hdr" style="margin-top:8px;">ΑΝΑΛΥΣΗ ΤΑΞΙΔΙΩΝ</div>'
+    +'<table><thead><tr><th style="width:26px;">#</th><th style="width:78px;">Ημερομηνία</th><th>Αναχώρηση / Προορισμός</th><th>Σκοπός</th><th style="width:58px;">Parking</th><th style="width:58px;">Km</th></tr></thead>'
+    +'<tbody>'+rowsHtml+'</tbody></table>'
+    +'<div class="sec-hdr" style="margin-top:8px;">ΣΥΝΟΠΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>'
+    +'<div class="tot-box">'
+    +'<div class="tot-cell"><label>Σύνολο Χιλιομέτρων</label><div class="tv">'+totKm+' km</div></div>'
+    +'<div class="tot-cell"><label>Τιμή / Χλμ</label><div class="tv">€'+rate.toFixed(2)+'</div></div>'
+    +'<div class="tot-cell amt"><label>Αμοιβή Οδοιπορικών</label><div class="tv">'+totAmt+'</div></div>'
+    +'<div class="tot-cell"><label>Σύνολο Parking</label><div class="tv">'+totPk+'</div></div>'
+    +'<div class="tot-cell grand"><label>ΓΕΝΙΚΟ ΣΥΝΟΛΟ</label><div class="tv">'+grand+'</div></div>'
+    +'</div>'
+    +rcpHtml
+    +notesHtml
+    +'<div class="sig-area">'
+    +'<div class="sig-box">Υπογραφή Υπαλλήλου</div>'
+    +'<div class="sig-box">Διευθυντής / Προιστάμενος</div>'
+    +'<div class="sig-box">Λογιστήριο</div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="footer">Κυπριακή Εταιρεία Πιστοποίησης | certification@cycert.org.cy | +357 22411435</div>'
+    +'</body></html>';
+}
+
+async function generateFormPDF(){
+  var jsPDF=window.jspdf.jsPDF;
+  var htmlStr=buildPrintBody();
+  var iframe=document.createElement('iframe');
+  iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
+  return new Promise(function(resolve,reject){
+    iframe.onload=function(){
+      try{
+        var iDoc=iframe.contentDocument||iframe.contentWindow.document;
+        var body=iDoc.body;
+        setTimeout(function(){
+          var fullH=Math.max(body.scrollHeight,body.offsetHeight,iDoc.documentElement.scrollHeight);
+          iframe.style.height=fullH+'px';
+          setTimeout(function(){
+            html2canvas(body,{
+              scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
+              width:794,height:fullH,scrollX:0,scrollY:0,windowWidth:794
+            }).then(function(canvas){
+              document.body.removeChild(iframe);
+              var A4_W=210,A4_H=297;
+              var pxW=canvas.width,pxH=canvas.height;
+              var mmH=Math.round((pxH/pxW)*A4_W);
+              var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+              var pagesMm=A4_H-10;
+              var totalPages=Math.ceil(mmH/pagesMm);
+              for(var p=0;p<totalPages;p++){
+                if(p>0)doc.addPage();
+                var srcY=Math.round((p*pagesMm/mmH)*pxH);
+                var srcH=Math.min(Math.round((pagesMm/mmH)*pxH),pxH-srcY);
+                if(srcH<=0)break;
+                var sliceCanvas=document.createElement('canvas');
+                sliceCanvas.width=pxW;sliceCanvas.height=srcH;
+                var ctx=sliceCanvas.getContext('2d');
+                ctx.drawImage(canvas,0,srcY,pxW,srcH,0,0,pxW,srcH);
+                var sliceData=sliceCanvas.toDataURL('image/jpeg',0.92);
+                doc.addImage(sliceData,'JPEG',0,5,A4_W,pagesMm*(srcH/Math.round((pagesMm/mmH)*pxH)));
+              }
+              resolve(doc);
+            }).catch(function(err){document.body.removeChild(iframe);reject(err);});
+          },400);
+        },300);
+      }catch(err){try{document.body.removeChild(iframe);}catch(e){}reject(err);}
+    };
+    iframe.srcdoc=htmlStr;
   });
-  // Footer
-  var footY=doc.internal.pageSize.getHeight()-8;
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,footY-4,pw,12,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');doc.setFontSize(7);
-  doc.text('Κυπριακή Εταιρεία Πιστοποίησης  |  certification@cycert.org.cy  |  +357 22411435',pw/2,footY,{align:'center'});
-  return doc;
 }
 
 /* ── ZIP for fallback ── */
@@ -1132,7 +1174,7 @@ async function sendWithM365(){
   try{
     // Step 1: Generate PDF
     await sleep(200);
-    var pdfDoc=generateFormPDF();
+    var pdfDoc=await generateFormPDF();
     var pdfB64=pdfDoc.output('datauristring').split(',')[1];
     var name=document.getElementById('f-name').value.replace(/\s+/g,'_')||'employee';
     var period=document.getElementById('f-period').value||'period';
@@ -1244,7 +1286,7 @@ async function sendWithEmailClient(){
   try{
     // Step 1: Generate PDF
     await sleep(200);
-    var pdfDoc=generateFormPDF();
+    var pdfDoc=await generateFormPDF();
     setStep(1,'done','✅');
 
     // Step 2: Prepare files
@@ -1337,19 +1379,16 @@ function downloadBlob(blob,mimeType,filename){
 }
 
 /* ── PDF PREVIEW ── */
-function previewPDF(){
+async function previewPDF(){
   var name=document.getElementById('f-name').value.trim();
   if(!name){toast('⚠️ Εισάγετε τουλάχιστον το Όνομα Υπαλλήλου','bad');return;}
-  toast('⏳ Δημιουργία PDF…','info');
-  setTimeout(function(){
-    try{
-      var doc=generateFormPDF();
-      doc.save('preview_odoeporika.pdf');
-      toast('📄 PDF αποθηκεύτηκε!','ok');
-    }catch(e){toast('❌ Σφάλμα PDF: '+e.message,'bad');}
-  },100);
+  toast('⏳ Δημιουργία PDF (αναμονή — παρακαλώ περιμένετε)...','info');
+  try{
+    var doc=await generateFormPDF();
+    doc.save('preview_odoeporika.pdf');
+    toast('📄 PDF αποθηκεύτηκε!','ok');
+  }catch(e){toast('❌ Σφάλμα PDF: '+e.message,'bad');}
 }
-
 /* ═══════════════════════════════════════════
    CONFIG MODAL
 ═══════════════════════════════════════════ */
@@ -1483,24 +1522,50 @@ async function calcDist(from,to){
 }
 async function geocode(place){
   try{
-    var q=/κυπρ|cyprus|nicosia|λεμεσ|λάρνακ|πάφ|αμμόχ/i.test(place)?place:place+', Κύπρος';
-    var r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=1',{headers:{'Accept-Language':'el'}});
-    var d=await r.json();
-    if(d.length)return{lat:d[0].lat,lon:d[0].lon,name:d[0].display_name.split(',')[0]};
+    var hasCY=/κυπρ|κύπρ|cyprus|nicosia|leukosia|λεμεσ|limassol|λάρνακ|larnaca|πάφος|paphos|αμμόχωστος|famagusta|λευκωσία/i.test(place);
+    var q=hasCY?place:place+', Κύπρος';
+    var url1='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=cy&limit=3&addressdetails=1';
+    var r1=await fetch(url1,{headers:{'Accept-Language':'el,en;q=0.9'}});
+    var d1=await r1.json();
+    if(d1&&d1.length)return{lat:d1[0].lat,lon:d1[0].lon,name:d1[0].display_name.split(',')[0]};
+    var url2='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=3';
+    var r2=await fetch(url2,{headers:{'Accept-Language':'el,en;q=0.9'}});
+    var d2=await r2.json();
+    if(d2&&d2.length)return{lat:d2[0].lat,lon:d2[0].lon,name:d2[0].display_name.split(',')[0]};
+    if(!hasCY){
+      var url3='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(place+' Cyprus')+'&limit=3';
+      var r3=await fetch(url3,{headers:{'Accept-Language':'el,en;q=0.9'}});
+      var d3=await r3.json();
+      if(d3&&d3.length)return{lat:d3[0].lat,lon:d3[0].lon,name:d3[0].display_name.split(',')[0]};
+    }
     return null;
-  }catch(e){return null;}
+  }catch(e){console.warn('Geocode error:',e);return null;}
 }
-function useKm(){
+function useKm(multiplier){
   if(!foundKm||!activeRow)return;
+  multiplier=multiplier||1;
+  var km=multiplier>1?parseFloat((foundKm*multiplier).toFixed(1)):foundKm;
   var r=activeRow,inp=document.getElementById('km-'+r);
-  if(inp){inp.value=foundKm;inp.style.transition='background .3s';inp.style.background='#dff6dd';setTimeout(function(){inp.style.background='transparent';},1500);}
-  var st=document.getElementById('ks-'+r);if(st){st.textContent='✅ '+foundKm+' km';st.className='km-st ok';}
+  if(inp){
+    inp.value=km;
+    inp.style.transition='background .3s';
+    inp.style.background=multiplier>1?'#f0f0fb':'#dff6dd';
+    setTimeout(function(){inp.style.background='transparent';},1500);
+  }
+  var st=document.getElementById('ks-'+r);
+  if(st){
+    st.textContent=(multiplier>1?'🔄':'✅')+' '+km+' km'+(multiplier>1?' (μ/επ.)':'');
+    st.className='km-st ok';
+  }
+  var rtCb=document.getElementById('rt-'+r);
+  if(rtCb)rtCb.checked=(multiplier>1);
   var fv=document.getElementById('m-from').value,tv=document.getElementById('m-to').value;
   var frEl=document.getElementById('fr-'+r),toEl=document.getElementById('to-'+r);
   if(frEl&&!frEl.value)frEl.value=fv;if(toEl&&!toEl.value)toEl.value=tv;
   var lnk=document.getElementById('gl-'+r);
   if(lnk){lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(fv)+'/'+encodeURIComponent(tv);lnk.classList.add('show');}
-  recalc();closeModal();toast('✅ '+foundKm+' km → Γρ.'+r,'ok');
+  recalc();closeModal();
+  toast('✅ '+km+' km → Γρ.'+r+(multiplier>1?' (μετ/επιστρ.)':''),'ok');
 }
 
 /* ═══════════════ CALC ALL ═══════════════ */
