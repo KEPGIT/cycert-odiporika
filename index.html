@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- html2canvas: renders Greek text correctly in PDF -->
+<!-- html2canvas for Greek PDF rendering -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <!-- MSAL.js for Microsoft 365 authentication (jsdelivr CDN - reliable) -->
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
@@ -263,7 +263,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
 .btn-use:hover{background:#0a5a0a;}
 .btn-use-rt{padding:8px 14px;background:#6264a7;color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;margin-left:8px;}
 .btn-use-rt:hover{background:#4a4c8a;}
-.m-use-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.m-use-btns{display:flex;gap:8px;align-items:center;}
 #m-frame-wrap{flex:1;min-height:340px;background:#f3f2f1;position:relative;}
 #m-frame-wrap iframe{width:100%;height:100%;min-height:340px;border:none;}
 .m-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--gray-sub);font-size:14px;text-align:center;}
@@ -336,7 +336,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
     <div>
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c0a3a5b2b4a9a6a9a3a1b4a9afae80a3b9a3a5b2b4eeafb2a7eea3b9">[email&#160;protected]</a></div>
+      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="385b5d4a4c515e515b594c515756785b415b5d4a4c16574a5f165b41">[email&#160;protected]</a></div>
     </div>
     <div class="form-title-area">
       <div class="form-title">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ</div>
@@ -832,7 +832,7 @@ function addRow(animate){
       '<input type="text" class="ci" id="pu-'+r+'" placeholder="Σκοπός ταξιδιού…" style="font-size:11px;color:var(--gray-sub);font-style:italic;margin-top:2px;">'+
     '</td>'+
     '<td style="text-align:center;"><input type="number" class="ci num park" id="pk-'+r+'" placeholder="0.00" min="0" step="0.01" oninput="recalc()"></td>'+
-    '<td style="text-align:center;"><input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()"><div class="km-st" id="ks-'+r+'"></div><label style="font-size:10px;color:#6264a7;cursor:pointer;display:block;margin-top:2px;" title="Μετ/επιστροφή x2"><input type="checkbox" id="rt-'+r+'" style="margin-right:2px;"> 🔄Μ/Ε</label></td>'+
+    '<td style="text-align:center;"><input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()"><div class="km-st" id="ks-'+r+'"></div><label style="font-size:10px;color:#6264a7;cursor:pointer;display:block;margin-top:2px;" title="Μετ/επιστρ. x2"><input type="checkbox" id="rt-'+r+'" style="margin-right:2px;"> 🔄Μ/Ε</label></td>'+
     '<td style="text-align:center;vertical-align:middle;"><button class="btn-maps" onclick="openModal('+r+')">🗺️ Maps</button><br><a class="gmaps-link" id="gl-'+r+'" href="#" target="_blank" rel="noopener">🔗 Χάρτης</a></td>'+
     '<td class="rcpt-cell"><button class="btn-attach-row" onclick="document.getElementById(\'fi-'+r+'\').click()">📎 Επισύναψη</button><span class="rcpt-count" id="rc-'+r+'"></span></td>';
   if(animate){tr.style.opacity='0';tr.style.transform='translateY(-8px)';}
@@ -906,10 +906,8 @@ function updateRowBadge(rowNum){
 }
 
 /* ═══════════════════════════════════════════
-   PDF GENERATION  (html2canvas → jsPDF)
-   FIX: Renders Greek characters correctly via browser fonts
+   PDF GENERATION (html2canvas → jsPDF) - FIX for Greek text
 ═══════════════════════════════════════════ */
-
 function buildPrintBody(){
   var name=document.getElementById('f-name').value||'–';
   var pos=document.getElementById('f-pos').value||'–';
@@ -925,7 +923,6 @@ function buildPrintBody(){
   var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
   var notes=document.getElementById('send-notes').value||'';
   var rowsHtml='';
-  var rowIdx=0;
   for(var i=1;i<=rowCount;i++){
     var dv=(document.getElementById('d-'+i)||{value:''}).value;
     var fv=(document.getElementById('fr-'+i)||{value:''}).value;
@@ -934,10 +931,9 @@ function buildPrintBody(){
     var pk=(document.getElementById('pk-'+i)||{value:''}).value;
     var km=(document.getElementById('km-'+i)||{value:''}).value;
     if(!dv&&!fv&&!tv&&!km&&!pk)continue;
-    rowIdx++;
     var rtEl=document.getElementById('rt-'+i);
     var rtNote=rtEl&&rtEl.checked?' <span style="color:#6264a7;font-size:10px;">(Μ/Ε)</span>':'';
-    var bg=rowIdx%2===0?'#faf9f8':'#ffffff';
+    var bg=(rowsHtml.split('<tr').length-1)%2===0?'#ffffff':'#faf9f8';
     rowsHtml+='<tr style="background:'+bg+'">';
     rowsHtml+='<td style="text-align:center;font-weight:700;color:#0078d4;">'+i+'</td>';
     rowsHtml+='<td>'+(dv||'–')+'</td>';
@@ -950,24 +946,24 @@ function buildPrintBody(){
   if(!rowsHtml)rowsHtml='<tr><td colspan="6" style="text-align:center;color:#999;">Δεν υπάρχουν εγγραφές</td></tr>';
   var rcpHtml='';
   if(receipts.length>0){
-    rcpHtml='<div style="margin-top:16px;background:#f3f2f1;border-left:4px solid #0078d4;padding:8px 12px;">';
-    rcpHtml+='<div style="font-weight:700;font-size:11px;color:#0078d4;margin-bottom:4px;">📎 ΕΠΙΣΥΝΑΠΤΟΜΕΝΑ ('+receipts.length+')</div>';
+    rcpHtml='<div style="margin-top:14px;background:#f3f2f1;border-left:4px solid #0078d4;padding:8px 12px;">';
+    rcpHtml+='<div style="font-weight:700;font-size:11px;color:#0078d4;margin-bottom:4px;">📎 Αρχεία ('+receipts.length+')</div>';
     receipts.forEach(function(r,idx){rcpHtml+='<div style="font-size:11px;">'+(idx+1)+'. '+r.name+' ('+(r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.')+') – '+(r.size/1024).toFixed(0)+' KB</div>';});
     rcpHtml+='</div>';
   }
-  var notesHtml=notes?'<div style="margin-top:10px;padding:8px 12px;background:#fff4ce;border-left:3px solid #d04e00;font-size:12px;">📝 '+notes+'</div>':'';
+  var notesHtml=notes?'<div style="margin-top:10px;padding:7px 12px;background:#fff4ce;border-left:3px solid #d04e00;font-size:12px;">📝 '+notes+'</div>':'';
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
     +'body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#323130;margin:0;padding:0;width:794px;background:#fff;}'
     +'.hdr{background:#0078d4;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:14px;}'
-    +'.badge{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#0078d4;flex-shrink:0;line-height:1.1;text-align:center;}'
+    +'.badge{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#0078d4;line-height:1.1;text-align:center;}'
     +'.co-info{flex:1;}.co-name{font-size:12px;font-weight:700;}.co-addr{font-size:10px;opacity:.85;margin-top:2px;}'
     +'.form-title-box{text-align:right;}.form-title-main{font-size:15px;font-weight:800;}.form-tag{font-size:9px;opacity:.8;}'
     +'.ref-bar{background:#f3f2f1;padding:6px 18px;font-size:11px;display:flex;gap:24px;border-bottom:1px solid #edebe9;}'
     +'.ref-bar span{font-weight:700;color:#0078d4;margin-right:3px;}'
-    +'.sec-hdr{background:#0078d4;color:#fff;padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:12px;}'
+    +'.sec-hdr{background:#0078d4;color:#fff;padding:5px 12px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:12px;}'
     +'.emp-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
     +'.emp-cell{padding:6px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
-    +'.emp-cell label{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;display:block;margin-bottom:1px;}'
+    +'.emp-cell label{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;display:block;}'
     +'.emp-cell .val{font-size:13px;font-weight:600;}'
     +'table{width:100%;border-collapse:collapse;margin-top:3px;font-size:12px;}'
     +'thead tr{background:#0078d4;color:#fff;}'
@@ -975,13 +971,12 @@ function buildPrintBody(){
     +'tbody td{padding:4px 7px;border:1px solid #edebe9;vertical-align:top;}'
     +'.tot-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
     +'.tot-cell{padding:7px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
-    +'.tot-cell label{font-size:10px;color:#605e5c;font-weight:700;text-transform:uppercase;display:block;margin-bottom:1px;}'
+    +'.tot-cell label{font-size:10px;color:#605e5c;font-weight:700;text-transform:uppercase;display:block;}'
     +'.tot-cell .tv{font-size:14px;font-weight:700;color:#0078d4;}'
-    +'.tot-cell.grand{grid-column:1/-1;border-right:none;}'
-    +'.tot-cell.grand .tv{font-size:17px;color:#d83b01;}'
+    +'.tot-cell.grand{grid-column:1/-1;border-right:none;}.tot-cell.grand .tv{font-size:17px;color:#d83b01;}'
     +'.tot-cell.amt .tv{color:#107c10;}'
     +'.sig-area{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;padding:0 8px;}'
-    +'.sig-box{text-align:center;padding-top:40px;border-top:1.5px solid #c8c6c4;font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;}'
+    +'.sig-box{text-align:center;padding-top:38px;border-top:1.5px solid #c8c6c4;font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;}'
     +'.footer{background:#0078d4;color:#fff;text-align:center;padding:7px;font-size:10px;margin-top:18px;}'
     +'</style></head><body>'
     +'<div class="hdr"><div class="badge">CY<br>CERT</div>'
@@ -1017,7 +1012,7 @@ function buildPrintBody(){
     +'<div class="sig-box">Λογιστήριο</div>'
     +'</div>'
     +'</div>'
-    +'<div class="footer">Κυπριακή Εταιρεία Πιστοποίησης | certification@cycert.org.cy | +357 22411435</div>'
+    +'<div class="footer">Κυπριακή Εταιρεία Πιστοποίησης | v6</div>'
     +'</body></html>';
 }
 
@@ -1381,13 +1376,13 @@ function downloadBlob(blob,mimeType,filename){
 /* ── PDF PREVIEW ── */
 async function previewPDF(){
   var name=document.getElementById('f-name').value.trim();
-  if(!name){toast('⚠️ Εισάγετε τουλάχιστον το Όνομα Υπαλλήλου','bad');return;}
-  toast('⏳ Δημιουργία PDF (αναμονή — παρακαλώ περιμένετε)...','info');
+  if(!name){toast('⚠️ Εισάγετε τουλάχιστον το Ὄνομα Υπαλλήλου','bad');return;}
+  toast('⏳ PDF (3-5s)...','info');
   try{
     var doc=await generateFormPDF();
     doc.save('preview_odoeporika.pdf');
-    toast('📄 PDF αποθηκεύτηκε!','ok');
-  }catch(e){toast('❌ Σφάλμα PDF: '+e.message,'bad');}
+    toast('📄 PDF OK!','ok');
+  }catch(e){toast('❌: '+e.message,'bad');}
 }
 /* ═══════════════════════════════════════════
    CONFIG MODAL
@@ -1539,7 +1534,7 @@ async function geocode(place){
       if(d3&&d3.length)return{lat:d3[0].lat,lon:d3[0].lon,name:d3[0].display_name.split(',')[0]};
     }
     return null;
-  }catch(e){console.warn('Geocode error:',e);return null;}
+  }catch(e){console.warn('Geocode:',e);return null;}
 }
 function useKm(multiplier){
   if(!foundKm||!activeRow)return;
@@ -1565,7 +1560,7 @@ function useKm(multiplier){
   var lnk=document.getElementById('gl-'+r);
   if(lnk){lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(fv)+'/'+encodeURIComponent(tv);lnk.classList.add('show');}
   recalc();closeModal();
-  toast('✅ '+km+' km → Γρ.'+r+(multiplier>1?' (μετ/επιστρ.)':''),'ok');
+  toast('✅ '+km+' km → Γρ.'+r+(multiplier>1?' (μετ/επ.)':''),'ok');
 }
 
 /* ═══════════════ CALC ALL ═══════════════ */
