@@ -2,35 +2,25 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v6</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v7</title>
 
-<!-- External Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- html2canvas for Greek PDF rendering -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- MSAL.js for Microsoft 365 authentication (jsdelivr CDN - reliable) -->
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
-<script>
-// Verify MSAL loaded
-window.addEventListener('load',function(){
-  if(typeof msal==='undefined'){
-    console.error('[CyCert] MSAL library failed to load!');
-  }else{
-    console.log('[CyCert] MSAL',msal.version||'2.x','loaded OK');
-  }
-});
-</script>
+<!-- jsPDF (must load FIRST, before html2canvas) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        integrity="sha512-bnMy7O1E0a0g9DdX7Ua7Y9tJg2dMHAe/+RMLPqTmFKjlT2NlTXQJTt5+UfaKpGVlBEABRCJKBpMnBnVKQV0bQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- html2canvas (for Greek PDF rendering) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- JSZip (for email fallback ZIP) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- MSAL.js for Microsoft 365 -->
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
-/* ====================================================
-   CYCERT ODOEPORIKA v5.0
-   Real email sending: MS Graph API + EmailJS + ZIP fallback
-   ==================================================== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --blue:#0078d4;--blue-dk:#005a9e;--blue-lt:#deecf9;
   --green:#107c10;--green-lt:#dff6dd;
@@ -40,303 +30,277 @@ window.addEventListener('load',function(){
   --orange:#d04e00;--orange-lt:#fff4ce;
   --gray-bg:#f3f2f1;--gray-bd:#c8c6c4;
   --gray-txt:#323130;--gray-sub:#605e5c;
-  --white:#ffffff;
-  --shadow:0 1.6px 3.6px rgba(0,0,0,.132),0 .3px .9px rgba(0,0,0,.108);
+  --white:#fff;
+  --shadow:0 1.6px 3.6px rgba(0,0,0,.132),0 .3px .9px rgba(0,0,0,.108)
 }
-html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(--gray-bg);color:var(--gray-txt);}
-.page{max-width:1180px;margin:0 auto;padding:14px 10px 60px;}
-.card{background:var(--white);border-radius:3px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;}
+html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(--gray-bg);color:var(--gray-txt)}
+.page{max-width:1200px;margin:0 auto;padding:14px 10px 60px}
+.card{background:var(--white);border-radius:3px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
 
-/* Company Header */
-.co-header{background:var(--white);border-bottom:3px solid var(--blue);padding:16px 20px;display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:start;}
-.co-badge{width:54px;height:54px;background:var(--blue);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;line-height:1.2;letter-spacing:.5px;}
-.co-name{font-size:13px;font-weight:700;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.4px;}
-.co-addr{font-size:11px;color:var(--gray-sub);margin-top:3px;line-height:1.6;}
-.form-title-area{text-align:right;}
-.form-title{font-size:19px;font-weight:800;color:var(--blue);}
-.form-tag{display:inline-block;background:var(--blue-lt);color:var(--blue-dk);font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;margin-top:5px;}
+/* Header */
+.co-header{background:var(--white);border-bottom:3px solid var(--blue);padding:16px 20px;display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:start}
+.co-badge{width:54px;height:54px;background:var(--blue);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;line-height:1.2;letter-spacing:.5px}
+.co-name{font-size:13px;font-weight:700;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.4px}
+.co-addr{font-size:11px;color:var(--gray-sub);margin-top:3px;line-height:1.6}
+.form-title-area{text-align:right}
+.form-title{font-size:19px;font-weight:800;color:var(--blue)}
+.form-tag{display:inline-block;background:var(--blue-lt);color:var(--blue-dk);font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;margin-top:5px}
 
-/* Section Label */
-.sec-lbl{background:#faf9f8;border-bottom:1px solid #edebe9;padding:10px 20px;font-size:12px;font-weight:700;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between;}
+/* Section labels */
+.sec-lbl{background:#faf9f8;border-bottom:1px solid #edebe9;padding:10px 20px;font-size:12px;font-weight:700;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
 
-/* Info Grid */
-.info-grid{display:grid;grid-template-columns:repeat(3,1fr);}
-.info-cell{padding:12px 18px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}
-.info-cell:nth-child(3n){border-right:none;}
-.info-cell label{display:block;font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
-.info-cell label .req{color:var(--red);}
-.sp-inp{width:100%;padding:7px 9px;border:1px solid var(--gray-bd);border-radius:2px;font-size:14px;font-family:inherit;color:var(--gray-txt);background:var(--white);outline:none;transition:border-color .12s;}
-.sp-inp:focus{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue);}
-.sp-inp::placeholder{color:#a19f9d;font-style:italic;}
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.info-cell{padding:12px 18px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9}
+.info-cell:nth-child(3n){border-right:none}
+.info-cell label{display:block;font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.req{color:var(--red)}
+.sp-inp{width:100%;padding:7px 9px;border:1px solid var(--gray-bd);border-radius:2px;font-size:14px;font-family:inherit;color:var(--gray-txt);background:var(--white);outline:none;transition:border-color .12s}
+.sp-inp:focus{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.sp-inp::placeholder{color:#a19f9d;font-style:italic}
 
 /* Banner */
-.banner{padding:9px 18px;font-size:12px;display:flex;align-items:center;gap:8px;border-left:4px solid var(--blue);background:var(--blue-lt);}
-.banner.ok{background:var(--green-lt);border-color:var(--green);color:var(--green);}
-.banner.sent{background:var(--purple-lt);border-color:var(--purple);color:var(--purple);}
-.banner.warning{background:var(--orange-lt);border-color:var(--orange);color:var(--orange);}
+.banner{padding:9px 18px;font-size:12px;display:flex;align-items:center;gap:8px;border-left:4px solid var(--blue);background:var(--blue-lt)}
+.banner.ok{background:var(--green-lt);border-color:var(--green);color:var(--green)}
+.banner.warning{background:var(--orange-lt);border-color:var(--orange);color:var(--orange)}
 
-/* Table */
-.tbl-wrap{padding:0 14px 14px;overflow-x:auto;}
-.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px;}
-.tbl thead tr{background:var(--blue);color:#fff;}
-.tbl thead th{padding:9px 7px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;border:1px solid rgba(255,255,255,.2);}
-.tbl thead th.ctr{text-align:center;}
-.tbl tbody tr:nth-child(odd){background:var(--white);}
-.tbl tbody tr:nth-child(even){background:#faf9f8;}
-.tbl tbody tr:hover{background:var(--blue-lt);}
-.tbl tbody td{padding:4px 5px;border:1px solid #edebe9;vertical-align:top;}
-.tbl tbody td.rn{text-align:center;font-weight:700;color:var(--blue);width:28px;vertical-align:middle;}
-.tbl tfoot td{padding:8px 7px;border:1px solid var(--gray-bd);font-weight:700;background:#f3f2f1;}
-.tot-lbl{text-align:right;color:var(--blue-dk);font-size:12px;}
-.tot-val{text-align:center;color:var(--blue-dk);font-size:14px;}
-.ci{width:100%;border:1px solid transparent;border-radius:2px;padding:5px;font-size:13px;font-family:inherit;background:transparent;outline:none;transition:all .12s;}
-.ci:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0 1px var(--blue);}
-.ci::placeholder{color:#a19f9d;font-style:italic;font-size:11px;}
-.ci.dt{width:116px;}.ci.num{text-align:center;}.ci.km{font-weight:700;color:var(--blue-dk);width:58px;}.ci.park{width:62px;}
-.rt-cell{min-width:250px;}
-.rt-row{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
-.rt-lbl{font-size:10px;font-weight:800;width:28px;flex-shrink:0;text-transform:uppercase;letter-spacing:.3px;}
-.rt-lbl.from{color:var(--green);}.rt-lbl.to{color:var(--red);}
-.km-st{font-size:10px;color:var(--gray-sub);min-height:12px;margin-top:1px;}
-.km-st.ok{color:var(--green);font-weight:700;}
+/* Trips table */
+.tbl-wrap{padding:0 14px 14px;overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+.tbl thead tr{background:var(--blue);color:#fff}
+.tbl thead th{padding:9px 7px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;border:1px solid rgba(255,255,255,.2)}
+.tbl thead th.ctr{text-align:center}
+.tbl tbody tr:nth-child(odd){background:var(--white)}
+.tbl tbody tr:nth-child(even){background:#faf9f8}
+.tbl tbody tr:hover{background:var(--blue-lt)}
+.tbl tbody td{padding:4px 5px;border:1px solid #edebe9;vertical-align:top}
+.tbl tbody td.rn{text-align:center;font-weight:700;color:var(--blue);width:28px;vertical-align:middle}
+.tbl tfoot td{padding:8px 7px;border:1px solid var(--gray-bd);font-weight:700;background:#f3f2f1}
+.tot-lbl{text-align:right;color:var(--blue-dk);font-size:12px}
+.tot-val{text-align:center;color:var(--blue-dk);font-size:14px}
+.ci{width:100%;border:1px solid transparent;border-radius:2px;padding:5px;font-size:13px;font-family:inherit;background:transparent;outline:none;transition:all .12s}
+.ci:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0 1px var(--blue)}
+.ci::placeholder{color:#a19f9d;font-style:italic;font-size:11px}
+.ci.dt{width:116px}.ci.num{text-align:center}.ci.km{font-weight:700;color:var(--blue-dk);width:60px}.ci.park{width:64px}
+.rt-cell{min-width:250px}
+.rt-row{display:flex;align-items:center;gap:3px;margin-bottom:2px}
+.rt-lbl{font-size:10px;font-weight:800;width:30px;flex-shrink:0;text-transform:uppercase;letter-spacing:.3px}
+.rt-lbl.from{color:var(--green)}.rt-lbl.to{color:var(--red)}
+.km-st{font-size:10px;color:var(--gray-sub);min-height:12px;margin-top:1px}
+.km-st.ok{color:var(--green);font-weight:700}
+.rt-chk-lbl{font-size:10px;color:var(--purple);cursor:pointer;display:flex;align-items:center;gap:3px;margin-top:3px;user-select:none}
 
-/* Receipt Attach */
-.rcpt-cell{text-align:center;min-width:88px;vertical-align:middle;}
-.btn-attach-row{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:var(--purple-lt);color:var(--purple);border:1px solid var(--purple);border-radius:2px;font-size:10px;font-family:inherit;font-weight:700;cursor:pointer;transition:all .12s;white-space:nowrap;}
-.btn-attach-row:hover{background:#e0e0f5;}
-.rcpt-count{font-size:10px;color:var(--purple);font-weight:700;margin-top:2px;display:block;}
+/* Receipt per-row */
+.rcpt-cell{text-align:center;min-width:88px;vertical-align:middle}
+.btn-attach-row{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:var(--purple-lt);color:var(--purple);border:1px solid var(--purple);border-radius:2px;font-size:10px;font-family:inherit;font-weight:700;cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-attach-row:hover{background:#e0e0f5}
+.rcpt-count{font-size:10px;color:var(--purple);font-weight:700;margin-top:2px;display:block}
 
 /* Buttons */
-.btn{padding:6px 14px;border-radius:2px;border:none;font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
-.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:var(--blue-dk);}
-.btn-out{background:var(--white);color:var(--blue);border:1px solid var(--blue);}.btn-out:hover{background:var(--blue-lt);}
-.btn-green{background:var(--green-lt);color:var(--green);border:1px solid var(--green);}.btn-green:hover{background:#c5edd5;}
-.btn-red{background:var(--white);color:var(--red);border:1px solid var(--red);}.btn-red:hover{background:var(--red-lt);}
-.btn-teal{background:var(--teal);color:#fff;}.btn-teal:hover{background:#005c52;}
-.btn-purple{background:var(--purple);color:#fff;}.btn-purple:hover{background:#4f50a0;}
-.btn-maps{padding:4px 8px;background:var(--blue);color:#fff;border:none;border-radius:2px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer;}
-.btn-maps:hover{background:var(--blue-dk);}
-.gmaps-link{display:none;margin-top:2px;font-size:10px;color:#d93025;font-weight:700;text-decoration:none;align-items:center;gap:2px;}
-.gmaps-link:hover{text-decoration:underline;}
-.gmaps-link.show{display:inline-flex;}
+.btn{padding:6px 14px;border-radius:2px;border:none;font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:var(--blue-dk)}
+.btn-out{background:var(--white);color:var(--blue);border:1px solid var(--blue)}.btn-out:hover{background:var(--blue-lt)}
+.btn-green{background:var(--green-lt);color:var(--green);border:1px solid var(--green)}.btn-green:hover{background:#c5edd5}
+.btn-red{background:var(--white);color:var(--red);border:1px solid var(--red)}.btn-red:hover{background:var(--red-lt)}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:#005c52}
+.btn-maps{padding:4px 8px;background:var(--blue);color:#fff;border:none;border-radius:2px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer}
+.btn-maps:hover{background:var(--blue-dk)}
+.gmaps-link{display:none;margin-top:2px;font-size:10px;color:#d93025;font-weight:700;text-decoration:none;align-items:center;gap:2px}
+.gmaps-link.show{display:inline-flex}
+.gmaps-link:hover{text-decoration:underline}
 
-/* Summary Cards */
-.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 18px;}
-.sum-card{background:var(--blue-lt);border:1px solid #c7e0f4;border-radius:4px;padding:10px 12px;text-align:center;}
-.sum-card.green{background:var(--green-lt);border-color:#9fd89f;}
-.sum-card.yellow{background:var(--orange-lt);border-color:#ffb900;}
-.sum-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-sub);}
-.sum-val{font-size:20px;font-weight:800;color:var(--blue-dk);margin-top:3px;}
-.sum-card.green .sum-val{color:var(--green);}
-.sum-card.yellow .sum-val{color:var(--red);}
-.sum-unit{font-size:10px;color:var(--gray-sub);margin-top:1px;}
+/* Summary cards */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 18px}
+.sum-card{background:var(--blue-lt);border:1px solid #c7e0f4;border-radius:4px;padding:10px 12px;text-align:center}
+.sum-card.green{background:var(--green-lt);border-color:#9fd89f}
+.sum-card.yellow{background:var(--orange-lt);border-color:#ffb900}
+.sum-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-sub)}
+.sum-val{font-size:20px;font-weight:800;color:var(--blue-dk);margin-top:3px}
+.sum-card.green .sum-val{color:var(--green)}
+.sum-card.yellow .sum-val{color:var(--red)}
+.sum-unit{font-size:10px;color:var(--gray-sub);margin-top:1px}
 
-/* Receipts Panel */
-.receipts-panel{padding:14px 18px;}
-.receipts-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;min-height:70px;}
-.receipts-grid.empty{align-items:center;justify-content:center;border:2px dashed var(--gray-bd);border-radius:4px;color:var(--gray-sub);font-size:12px;padding:20px;}
-.receipt-thumb{position:relative;width:100px;border:2px solid var(--gray-bd);border-radius:4px;overflow:hidden;background:#faf9f8;transition:border-color .12s;cursor:pointer;}
-.receipt-thumb:hover{border-color:var(--purple);}
-.receipt-thumb img{width:100%;height:70px;object-fit:cover;display:block;}
-.receipt-thumb .pdf-icon{width:100%;height:70px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#fde7e9;}
-.receipt-thumb .rcpt-info{padding:4px 5px;font-size:10px;color:var(--gray-sub);line-height:1.3;overflow:hidden;word-break:break-all;}
-.receipt-thumb .rcpt-row-badge{position:absolute;top:3px;left:3px;background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;}
-.receipt-thumb .rcpt-del{position:absolute;top:3px;right:3px;background:var(--red);color:#fff;border:none;width:16px;height:16px;border-radius:50%;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;}
-.receipt-thumb .rcpt-del:hover{background:#a00;}
+/* Receipts panel */
+.receipts-panel{padding:14px 18px}
+.receipts-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;min-height:70px}
+.receipts-grid.empty{align-items:center;justify-content:center;border:2px dashed var(--gray-bd);border-radius:4px;color:var(--gray-sub);font-size:12px;padding:20px;text-align:center}
+.receipt-thumb{position:relative;width:100px;border:2px solid var(--gray-bd);border-radius:4px;overflow:hidden;background:#faf9f8;cursor:pointer;transition:border-color .12s}
+.receipt-thumb:hover{border-color:var(--purple)}
+.receipt-thumb img{width:100%;height:70px;object-fit:cover;display:block}
+.receipt-thumb .pdf-icon{width:100%;height:70px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#fde7e9}
+.receipt-thumb .rcpt-info{padding:4px 5px;font-size:10px;color:var(--gray-sub);line-height:1.3;overflow:hidden;word-break:break-all}
+.receipt-thumb .rcpt-row-badge{position:absolute;top:3px;left:3px;background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px}
+.receipt-thumb .rcpt-del{position:absolute;top:3px;right:3px;background:var(--red);color:#fff;border:none;width:16px;height:16px;border-radius:50%;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700}
+.receipt-thumb .rcpt-del:hover{background:#a00}
 
-/* ══════════════ SEND PANEL v5 ══════════════ */
-.send-panel{background:linear-gradient(135deg,#f0fff0,#f0f0fb);border-top:3px solid var(--teal);padding:20px 22px;}
-.send-panel-title{font-size:16px;font-weight:800;color:var(--teal);margin-bottom:3px;display:flex;align-items:center;gap:8px;}
-.send-panel-sub{font-size:12px;color:var(--gray-sub);margin-bottom:16px;}
+/* Send panel */
+.send-panel{background:linear-gradient(135deg,#f0fff0,#f0f0fb);border-top:3px solid var(--teal);padding:20px 22px}
+.send-panel-title{font-size:16px;font-weight:800;color:var(--teal);margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.send-panel-sub{font-size:12px;color:var(--gray-sub);margin-bottom:16px}
+.method-tabs{display:flex;gap:0;margin-bottom:18px;border:1px solid var(--gray-bd);border-radius:4px;overflow:hidden}
+.method-tab{flex:1;padding:10px 12px;background:var(--white);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;border-right:1px solid var(--gray-bd)}
+.method-tab:last-child{border-right:none}
+.method-tab.active{background:var(--teal);color:#fff}
+.method-tab:not(.active):hover{background:#f3f2f1}
+.tab-badge{background:var(--green);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px}
+.method-tab.active .tab-badge{background:rgba(255,255,255,.3)}
+.send-fields{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;max-width:680px;margin-bottom:16px}
+.send-fields label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;white-space:nowrap}
+.send-fields input{padding:7px 10px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.send-fields input:focus{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.send-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.btn-send-main{background:linear-gradient(135deg,var(--teal),#005c52);color:#fff;padding:11px 26px;font-size:15px;font-weight:800;border:none;border-radius:3px;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(0,130,114,.35);transition:all .15s;display:flex;align-items:center;gap:8px}
+.btn-send-main:hover{background:linear-gradient(135deg,#005c52,#003d38);box-shadow:0 5px 16px rgba(0,130,114,.45)}
+.btn-send-main:disabled{background:#a19f9d;box-shadow:none;cursor:not-allowed}
+.send-status-bar{padding:9px 14px;border-radius:3px;font-size:11px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.send-status-bar.m365{background:var(--blue-lt);border-left:4px solid var(--blue);color:var(--blue-dk)}
+.send-status-bar.notcfg{background:var(--orange-lt);border-left:4px solid var(--orange);color:var(--orange)}
+.send-status-bar.ready{background:var(--green-lt);border-left:4px solid var(--green);color:var(--green)}
 
-/* Method selector tabs */
-.method-tabs{display:flex;gap:0;margin-bottom:18px;border:1px solid var(--gray-bd);border-radius:4px;overflow:hidden;}
-.method-tab{flex:1;padding:10px 12px;background:var(--white);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;border-right:1px solid var(--gray-bd);}
-.method-tab:last-child{border-right:none;}
-.method-tab.active{background:var(--teal);color:#fff;}
-.method-tab:not(.active):hover{background:#f3f2f1;}
-.method-tab .tab-badge{background:var(--green);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;}
-.method-tab.active .tab-badge{background:rgba(255,255,255,.3);}
+/* Send overlay */
+.overlay-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center}
+.overlay-bg.on{display:flex}
 
-/* Send fields */
-.send-fields{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;max-width:680px;margin-bottom:16px;}
-.send-fields label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;white-space:nowrap;}
-.send-fields input,.send-fields select{padding:7px 10px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%;}
-.send-fields input:focus,.send-fields select:focus{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal);}
-
-/* Send actions */
-.send-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
-
-/* Big Send Button */
-.btn-send-main{
-  background:linear-gradient(135deg,var(--teal),#005c52);
-  color:#fff;padding:11px 26px;font-size:15px;font-weight:800;
-  border:none;border-radius:3px;cursor:pointer;font-family:inherit;
-  box-shadow:0 3px 10px rgba(0,130,114,.35);
-  transition:all .15s;display:flex;align-items:center;gap:8px;
-}
-.btn-send-main:hover{background:linear-gradient(135deg,#005c52,#003d38);box-shadow:0 5px 16px rgba(0,130,114,.45);}
-.btn-send-main:disabled{background:#a19f9d;box-shadow:none;cursor:not-allowed;}
-
-/* Status info bar */
-.send-status-bar{padding:9px 14px;border-radius:3px;font-size:11px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.send-status-bar.m365{background:var(--blue-lt);border-left:4px solid var(--blue);color:var(--blue-dk);}
-.send-status-bar.notcfg{background:var(--orange-lt);border-left:4px solid var(--orange);color:var(--orange);}
-.send-status-bar.ready{background:var(--green-lt);border-left:4px solid var(--green);color:var(--green);}
-
-/* Send Progress Modal */
-.snd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;}
-.snd-overlay.on{display:flex;}
-.snd-box{background:var(--white);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:92%;max-width:580px;overflow:hidden;}
-.snd-head{padding:18px 22px;background:var(--teal);color:#fff;display:flex;align-items:center;gap:10px;}
-.snd-head-title{font-size:16px;font-weight:800;}
-.snd-body{padding:22px;}
-.snd-steps{list-style:none;margin-bottom:16px;}
-.snd-step{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:4px;margin-bottom:6px;font-size:13px;font-weight:600;transition:all .3s;}
-.snd-step.pending{background:#f3f2f1;color:#a19f9d;}
-.snd-step.active{background:var(--blue-lt);color:var(--blue-dk);}
-.snd-step.done{background:var(--green-lt);color:var(--green);}
-.snd-step.error{background:var(--red-lt);color:var(--red);}
-.snd-step .step-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-.snd-step.pending .step-icon{background:#edebe9;}
-.snd-step.active .step-icon{background:var(--blue-lt);}
-.snd-step.done .step-icon{background:var(--green);}
-.snd-step.error .step-icon{background:var(--red);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
-
-/* Success box */
-.success-box{background:var(--green-lt);border:2px solid var(--green);border-radius:6px;padding:18px;text-align:center;margin-bottom:16px;}
-.success-box .sb-icon{font-size:42px;margin-bottom:8px;}
-.success-box .sb-title{font-size:16px;font-weight:800;color:var(--green);margin-bottom:4px;}
-.success-box .sb-sub{font-size:12px;color:var(--gray-sub);}
-
-/* Fallback box (manual attach) */
-.fallback-box{background:var(--orange-lt);border:2px solid #ffb900;border-radius:6px;padding:16px;margin-bottom:16px;}
-.fallback-box .fb-title{font-weight:800;font-size:14px;color:#3d3200;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.attach-step{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;color:#5a4800;}
-.attach-step .as-num{background:#ffb900;color:#fff;border-radius:50%;width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-top:1px;}
-
-/* File checklist */
-.file-checklist{background:#faf9f8;border:1px solid #edebe9;border-radius:4px;padding:12px 14px;margin-bottom:12px;}
-.file-checklist-title{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;margin-bottom:8px;}
-.file-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f3f2f1;font-size:12px;}
-.file-item:last-child{border-bottom:none;}
-.file-item .fi-icon{font-size:16px;flex-shrink:0;}
-.file-item .fi-name{flex:1;color:var(--gray-txt);font-weight:600;}
-.file-item .fi-size{color:#a19f9d;font-size:11px;}
-
-.snd-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid #edebe9;}
+/* Send progress modal */
+.snd-box{background:var(--white);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:92%;max-width:580px;overflow:hidden}
+.snd-head{padding:18px 22px;background:var(--teal);color:#fff;display:flex;align-items:center;gap:10px}
+.snd-head-title{font-size:16px;font-weight:800}
+.snd-body{padding:22px}
+.snd-steps{list-style:none;margin-bottom:16px}
+.snd-step{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:4px;margin-bottom:6px;font-size:13px;font-weight:600;transition:all .3s}
+.snd-step.pending{background:#f3f2f1;color:#a19f9d}
+.snd-step.active{background:var(--blue-lt);color:var(--blue-dk)}
+.snd-step.done{background:var(--green-lt);color:var(--green)}
+.snd-step.error{background:var(--red-lt);color:var(--red)}
+.step-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.snd-step.pending .step-icon{background:#edebe9}
+.snd-step.active .step-icon{background:var(--blue-lt)}
+.snd-step.done .step-icon,.snd-step.error .step-icon{background:transparent}
+.success-box{background:var(--green-lt);border:2px solid var(--green);border-radius:6px;padding:18px;text-align:center;margin-bottom:16px}
+.success-box .sb-icon{font-size:42px;margin-bottom:8px}
+.success-box .sb-title{font-size:16px;font-weight:800;color:var(--green);margin-bottom:4px}
+.success-box .sb-sub{font-size:12px;color:var(--gray-sub)}
+.fallback-box{background:var(--orange-lt);border:2px solid #ffb900;border-radius:6px;padding:16px;margin-bottom:16px}
+.fallback-box .fb-title{font-weight:800;font-size:14px;color:#3d3200;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.attach-step{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;color:#5a4800}
+.as-num{background:#ffb900;color:#fff;border-radius:50%;width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-top:1px}
+.file-checklist{background:#faf9f8;border:1px solid #edebe9;border-radius:4px;padding:12px 14px;margin-bottom:12px}
+.file-checklist-title{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;margin-bottom:8px}
+.file-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f3f2f1;font-size:12px}
+.file-item:last-child{border-bottom:none}
+.fi-icon{font-size:16px;flex-shrink:0}
+.fi-name{flex:1;color:var(--gray-txt);font-weight:600}
+.fi-size{color:#a19f9d;font-size:11px}
+.snd-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid #edebe9}
 
 /* Signatures */
-.sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding:14px 20px;}
-.sig-box{text-align:center;}
-.sig-line{border-bottom:2px solid var(--gray-bd);height:46px;margin-bottom:6px;position:relative;}
-.sig-line::before{content:'X';position:absolute;bottom:4px;left:0;color:#ccc;}
-.sig-lbl{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;}
-.sig-sub{font-size:11px;color:#a19f9d;margin-top:2px;}
+.sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding:14px 20px}
+.sig-box{text-align:center}
+.sig-line{border-bottom:2px solid var(--gray-bd);height:46px;margin-bottom:6px;position:relative}
+.sig-line::before{content:'X';position:absolute;bottom:4px;left:0;color:#ccc}
+.sig-lbl{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase}
+.sig-sub{font-size:11px;color:#a19f9d;margin-top:2px}
 
-/* Action Bar */
-.act-bar{padding:12px 18px;border-top:1px solid #edebe9;background:#faf9f8;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.last-saved{margin-left:auto;font-size:11px;color:#a19f9d;}
+/* Action bar */
+.act-bar{padding:12px 18px;border-top:1px solid #edebe9;background:#faf9f8;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.last-saved{margin-left:auto;font-size:11px;color:#a19f9d}
 
-/* Maps Modal */
-.m-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;}
-.m-overlay.on{display:flex;}
-.m-box{background:var(--white);border-radius:4px;box-shadow:0 16px 48px rgba(0,0,0,.3);width:92%;max-width:920px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
-.m-head{background:#d93025;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
-.m-head-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;}
-.m-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:1px 8px;border-radius:2px;line-height:1;}
-.m-close:hover{background:rgba(255,255,255,.2);}
-.m-ctrl{padding:12px 16px;border-bottom:1px solid #edebe9;background:#faf9f8;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
-.m-inp-grp{display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px;}
-.m-inp-grp label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;}
-.m-inp{padding:7px 9px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%;}
-.m-inp:focus{border-color:#d93025;box-shadow:0 0 0 1px #d93025;}
-.btn-find{padding:8px 16px;background:#d93025;color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.btn-find:hover{background:#b31412;}
-.m-result{padding:9px 16px;background:var(--green-lt);border-bottom:1px solid #edebe9;display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.m-result.show{display:flex;}
-.dist-big{font-size:22px;font-weight:800;color:var(--green);}
-.dist-lbl{font-size:11px;color:var(--gray-sub);}
-.dur-val{font-size:14px;font-weight:700;color:var(--gray-sub);}
-.btn-use{padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;}
-.btn-use:hover{background:#0a5a0a;}
-.btn-use-rt{padding:8px 14px;background:#6264a7;color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;margin-left:8px;}
-.btn-use-rt:hover{background:#4a4c8a;}
-.m-use-btns{display:flex;gap:8px;align-items:center;}
-#m-frame-wrap{flex:1;min-height:340px;background:#f3f2f1;position:relative;}
-#m-frame-wrap iframe{width:100%;height:100%;min-height:340px;border:none;}
-.m-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--gray-sub);font-size:14px;text-align:center;}
+/* Config modal */
+.cfg-box{background:var(--white);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:92%;max-width:640px;max-height:92vh;overflow-y:auto}
+.cfg-head{padding:18px 22px;background:var(--blue-dk);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.cfg-head-title{font-size:16px;font-weight:800}
+.cfg-body{padding:22px}
+.cfg-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #edebe9}
+.cfg-section:last-child{border-bottom:none;margin-bottom:0}
+.cfg-section-title{font-size:13px;font-weight:800;color:var(--blue-dk);margin-bottom:10px}
+.cfg-row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.cfg-row label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase}
+.cfg-row input{padding:7px 10px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.cfg-row input:focus{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.cfg-help{font-size:11px;color:var(--gray-sub);line-height:1.6;background:#faf9f8;padding:8px 10px;border-radius:3px;margin-bottom:10px}
+.cfg-help a{color:var(--blue)}
+.cfg-actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 22px;border-top:1px solid #edebe9}
 
-/* Config Modal */
-.cfg-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;align-items:center;justify-content:center;}
-.cfg-overlay.on{display:flex;}
-.cfg-box{background:var(--white);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:92%;max-width:640px;max-height:92vh;overflow-y:auto;}
-.cfg-head{padding:18px 22px;background:var(--blue-dk);color:#fff;display:flex;align-items:center;justify-content:space-between;}
-.cfg-head-title{font-size:16px;font-weight:800;}
-.cfg-body{padding:22px;}
-.cfg-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #edebe9;}
-.cfg-section:last-child{border-bottom:none;margin-bottom:0;}
-.cfg-section-title{font-size:13px;font-weight:800;color:var(--blue-dk);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.cfg-row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;margin-bottom:8px;}
-.cfg-row label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase;}
-.cfg-row input{padding:7px 10px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%;}
-.cfg-row input:focus{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue);}
-.cfg-help{font-size:11px;color:var(--gray-sub);line-height:1.6;background:#faf9f8;padding:8px 10px;border-radius:3px;margin-bottom:10px;}
-.cfg-help a{color:var(--blue);text-decoration:none;}
-.cfg-help a:hover{text-decoration:underline;}
-.cfg-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid #edebe9;}
+/* Maps modal */
+.m-box{background:var(--white);border-radius:4px;box-shadow:0 16px 48px rgba(0,0,0,.3);width:92%;max-width:920px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.m-head{background:#d93025;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.m-head-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.m-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:1px 8px;border-radius:2px;line-height:1}
+.m-close:hover{background:rgba(255,255,255,.2)}
+.m-ctrl{padding:12px 16px;border-bottom:1px solid #edebe9;background:#faf9f8;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.m-inp-grp{display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px}
+.m-inp-grp label{font-size:11px;font-weight:700;color:var(--gray-sub);text-transform:uppercase}
+.m-inp{padding:7px 9px;border:1px solid var(--gray-bd);border-radius:2px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.m-inp:focus{border-color:#d93025;box-shadow:0 0 0 1px #d93025}
+.btn-find{padding:8px 16px;background:#d93025;color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-find:hover{background:#b31412}
+.m-result{padding:9px 16px;background:var(--green-lt);border-bottom:1px solid #edebe9;display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.m-result.show{display:flex}
+.dist-big{font-size:22px;font-weight:800;color:var(--green)}
+.dist-lbl{font-size:11px;color:var(--gray-sub)}
+.dur-val{font-size:14px;font-weight:700;color:var(--gray-sub)}
+.btn-use{padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer}
+.btn-use:hover{background:#0a5a0a}
+.btn-use-rt{padding:8px 14px;background:var(--purple);color:#fff;border:none;border-radius:2px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer}
+.btn-use-rt:hover{background:#4a4c8a}
+.m-use-btns{display:flex;gap:8px;align-items:center}
+.m-frame-wrap{flex:1;min-height:340px;background:#f3f2f1;position:relative}
+.m-frame-wrap iframe{width:100%;height:100%;min-height:340px;border:none}
+.m-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--gray-sub);font-size:14px;text-align:center}
 
-/* Spinner ring */
-.ring{display:inline-block;width:22px;height:22px;position:relative;}
-.ring div{box-sizing:border-box;display:block;position:absolute;width:18px;height:18px;margin:2px;border:3px solid var(--blue);border-radius:50%;animation:ringspin 1.1s cubic-bezier(.5,0,.5,1) infinite;border-color:var(--blue) transparent transparent transparent;}
+/* Spinner */
+.ring{display:inline-block;width:22px;height:22px;position:relative}
+.ring div{box-sizing:border-box;display:block;position:absolute;width:18px;height:18px;margin:2px;border:3px solid var(--blue);border-radius:50%;animation:ringspin 1.1s cubic-bezier(.5,0,.5,1) infinite;border-color:var(--blue) transparent transparent transparent}
 .ring div:nth-child(1){animation-delay:-.45s}.ring div:nth-child(2){animation-delay:-.3s}.ring div:nth-child(3){animation-delay:-.15s}
 @keyframes ringspin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
 /* Toast */
-.toast{position:fixed;bottom:18px;right:18px;background:var(--gray-txt);color:#fff;padding:11px 15px;border-radius:4px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:99999;opacity:0;transform:translateY(14px);transition:all .25s;display:flex;align-items:center;gap:8px;max-width:380px;}
-.toast.on{opacity:1;transform:translateY(0);}
-.toast.ok{background:var(--green);}
-.toast.bad{background:var(--red);}
-.toast.info{background:var(--teal);}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--gray-txt);color:#fff;padding:11px 15px;border-radius:4px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:99999;opacity:0;transform:translateY(14px);transition:all .25s;display:flex;align-items:center;gap:8px;max-width:380px}
+.toast.on{opacity:1;transform:translateY(0)}
+.toast.ok{background:var(--green)}
+.toast.bad{background:var(--red)}
+.toast.info{background:var(--teal)}
 
 /* Print */
 @media print{
-  .act-bar,.btn-maps,.gmaps-link,.btn,.m-overlay,.toast,.banner,
+  .act-bar,.btn-maps,.gmaps-link,.btn,.overlay-bg,.toast,.banner,
   .sec-lbl .btn-green,.send-panel,.receipts-panel .btn-green,
-  .btn-attach-row,.rcpt-del,.snd-overlay,.cfg-overlay{display:none!important;}
-  body{background:#fff;}
-  .card{box-shadow:none!important;border:1px solid #ccc;}
-  .ci{border-color:transparent!important;}
+  .btn-attach-row,.rcpt-del{display:none!important}
+  body{background:#fff}
+  .card{box-shadow:none!important;border:1px solid #ccc}
+  .ci{border-color:transparent!important}
 }
 @media(max-width:700px){
-  .co-header{grid-template-columns:60px 1fr;}.form-title-area{grid-column:1/-1;text-align:left;}
-  .info-grid{grid-template-columns:1fr;}.info-cell{border-right:none!important;}
-  .sum-grid{grid-template-columns:repeat(2,1fr);}
-  .sig-grid{grid-template-columns:1fr;gap:14px;}
-  .m-ctrl{flex-direction:column;}
-  .send-fields{grid-template-columns:1fr;}
-  .cfg-row{grid-template-columns:1fr;}
-  .method-tabs{flex-direction:column;}
+  .co-header{grid-template-columns:60px 1fr}.form-title-area{grid-column:1/-1;text-align:left}
+  .info-grid{grid-template-columns:1fr}.info-cell{border-right:none!important}
+  .sum-grid{grid-template-columns:repeat(2,1fr)}
+  .sig-grid{grid-template-columns:1fr;gap:14px}
+  .m-ctrl{flex-direction:column}
+  .send-fields{grid-template-columns:1fr}
+  .cfg-row{grid-template-columns:1fr}
+  .method-tabs{flex-direction:column}
 }
 </style>
 </head>
 <body>
 <div class="page">
 
+<!-- Top banner -->
 <div class="banner" id="banner">
-  ℹ️ <span>Συμπληρώστε τα στοιχεία · <strong>🗺️ Maps</strong> για χλμ · <strong>📎</strong> για αποδείξεις · <strong>📤 Αποστολή</strong> για αυτόματη αποστολή email με PDF</span>
+  <span>&#8505;&#65039; &nbsp;Συμπληρώστε τα στοιχεία &nbsp;·&nbsp; <strong>&#128506;&#65039; Maps</strong> για χλμ &nbsp;·&nbsp; <strong>&#128206;</strong> για αποδείξεις &nbsp;·&nbsp; <strong>&#128228; Αποστολή</strong> για email με PDF</span>
 </div>
 
 <div class="card" style="margin-top:10px;">
 
-  <!-- Company Header -->
+  <!-- Company header -->
   <div class="co-header">
     <div class="co-badge">CY<br>CERT</div>
     <div>
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
-      <div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-      📞 +357 22411435 &nbsp;|&nbsp; 📠 +357 22 519115 &nbsp;|&nbsp; ✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a1c2c4d3d5c8c7c8c2c0d5c8cecfe1c2d8c2c4d3d58fced3c68fc2d8">[email&#160;protected]</a></div>
+      <div class="co-addr">
+        Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
+        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e7848295938e818e8486938e8889a7849e84829593c9889580c9849e">[email&#160;protected]</a>
+      </div>
     </div>
     <div class="form-title-area">
       <div class="form-title">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ</div>
@@ -346,252 +310,350 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
     </div>
   </div>
 
-  <!-- Employee Info -->
-  <div class="sec-lbl">👤 Στοιχεία Υπαλλήλου</div>
+  <!-- Employee info -->
+  <div class="sec-lbl">&#128100; Στοιχεία Υπαλλήλου</div>
   <div class="info-grid">
-    <div class="info-cell"><label>Όνομα Υπαλλήλου <span class="req">*</span></label><input class="sp-inp" id="f-name" type="text" placeholder="π.χ. Γεώργιος Παπαδόπουλος"></div>
-    <div class="info-cell"><label>Θέση <span class="req">*</span></label><input class="sp-inp" id="f-pos" type="text" placeholder="π.χ. Ελεγκτής Ποιότητας"></div>
-    <div class="info-cell"><label>Αρ. Εγγραφής &amp; Τύπος Οχήματος <span class="req">*</span></label><input class="sp-inp" id="f-veh" type="text" placeholder="π.χ. Toyota – ΑΒΓ 1234"></div>
-    <div class="info-cell"><label>Μήνας / Περίοδος</label><input class="sp-inp" id="f-period" type="month"></div>
-    <div class="info-cell"><label>Τμήμα</label><input class="sp-inp" id="f-dept" type="text" placeholder="π.χ. Πιστοποίηση – ISO"></div>
-    <div class="info-cell"><label>Τιμή / Χλμ (€)</label><input class="sp-inp" id="f-rate" type="number" value="0.17" step="0.01" min="0" max="5" style="max-width:110px;" oninput="recalc()"></div>
+    <div class="info-cell">
+      <label>Όνομα Υπαλλήλου <span class="req">*</span></label>
+      <input class="sp-inp" id="f-name" type="text" placeholder="π.χ. Γεώργιος Παπαδόπουλος">
+    </div>
+    <div class="info-cell">
+      <label>Θέση <span class="req">*</span></label>
+      <input class="sp-inp" id="f-pos" type="text" placeholder="π.χ. Ελεγκτής Ποιότητας">
+    </div>
+    <div class="info-cell">
+      <label>Αρ. Εγγρ. &amp; Τύπος Οχήματος <span class="req">*</span></label>
+      <input class="sp-inp" id="f-veh" type="text" placeholder="π.χ. Toyota – ΑΒΓ 1234">
+    </div>
+    <div class="info-cell">
+      <label>Μήνας / Περίοδος</label>
+      <input class="sp-inp" id="f-period" type="month">
+    </div>
+    <div class="info-cell">
+      <label>Τμήμα</label>
+      <input class="sp-inp" id="f-dept" type="text" placeholder="π.χ. Πιστοποίηση – ISO">
+    </div>
+    <div class="info-cell">
+      <label>Τιμή / Χλμ (€)</label>
+      <input class="sp-inp" id="f-rate" type="number" value="0.17" step="0.01" min="0" max="5"
+             style="max-width:110px;" oninput="recalc()">
+    </div>
   </div>
 
-  <!-- Trips Table -->
+  <!-- Trips table -->
   <div class="sec-lbl">
-    🗺️ Λεπτομέρειες Ταξιδιών
-    <button class="btn btn-green" onclick="addRow(true)" style="font-size:11px;padding:3px 10px;">➕ Νέα Γραμμή</button>
+    &#128506;&#65039; Λεπτομέρειες Ταξιδιών
+    <button class="btn btn-green" onclick="addRow(true)" style="font-size:11px;padding:3px 10px;">&#10133; Νέα Γραμμή</button>
   </div>
   <div class="tbl-wrap">
     <table class="tbl" id="tbl">
       <thead>
         <tr>
           <th class="ctr" style="width:28px;">#</th>
-          <th style="width:116px;">📅 Ημερομηνία</th>
-          <th>📍 Αναχώρηση / Προορισμός &amp; Σκοπός</th>
-          <th class="ctr" style="width:78px;">🅿️ Parking €</th>
-          <th class="ctr" style="width:72px;">📏 Km</th>
-          <th class="ctr" style="width:84px;">🗺️ Χάρτης</th>
-          <th class="ctr" style="width:94px;">📎 Απόδειξη</th>
+          <th style="width:116px;">&#128197; Ημερομηνία</th>
+          <th>&#128205; Αναχώρηση / Προορισμός &amp; Σκοπός</th>
+          <th class="ctr" style="width:80px;">&#127359; Parking €</th>
+          <th class="ctr" style="width:110px;">&#128207; Km</th>
+          <th class="ctr" style="width:84px;">&#128506; Χάρτης</th>
+          <th class="ctr" style="width:94px;">&#128206; Απόδειξη</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
       <tfoot>
-        <tr><td colspan="3" class="tot-lbl">ΣΥΝΟΛΟ / TOTAL</td><td class="tot-val" id="t-park">€ 0.00</td><td class="tot-val" id="t-km">0 km</td><td colspan="2"></td></tr>
-        <tr><td colspan="3" class="tot-lbl" style="color:var(--green);">💰 ΑΜΟΙΒΗ ΟΔΟΙΠΟΡΙΚΩΝ (km × €/km)</td><td colspan="2" class="tot-val" id="t-amt" style="color:var(--green);font-size:15px;">€ 0.00</td><td colspan="2"></td></tr>
-        <tr><td colspan="3" class="tot-lbl">🧾 ΓΕΝΙΚΟ ΣΥΝΟΛΟ (Αμοιβή + Parking)</td><td colspan="2" class="tot-val" id="t-tot" style="font-size:15px;">€ 0.00</td><td colspan="2"></td></tr>
+        <tr>
+          <td colspan="3" class="tot-lbl">ΣΥΝΟΛΟ / TOTAL</td>
+          <td class="tot-val" id="t-park">€ 0.00</td>
+          <td class="tot-val" id="t-km">0 km</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tot-lbl" style="color:var(--green);">&#128176; ΑΜΟΙΒΗ ΟΔΟΙΠΟΡΙΚΩΝ (km × €/km)</td>
+          <td colspan="2" class="tot-val" id="t-amt" style="color:var(--green);font-size:15px;">€ 0.00</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tot-lbl">&#129534; ΓΕΝΙΚΟ ΣΥΝΟΛΟ (Αμοιβή + Parking)</td>
+          <td colspan="2" class="tot-val" id="t-tot" style="font-size:15px;">€ 0.00</td>
+          <td colspan="2"></td>
+        </tr>
       </tfoot>
     </table>
   </div>
 
-  <!-- Summary Cards -->
+  <!-- Summary cards -->
   <div class="sum-grid">
-    <div class="sum-card"><div class="sum-lbl">Σύνολο Χλμ</div><div class="sum-val" id="s-km">0</div><div class="sum-unit">χιλιόμετρα</div></div>
-    <div class="sum-card"><div class="sum-lbl">Τιμή / Χλμ</div><div class="sum-val" id="s-rate">€0.17</div><div class="sum-unit">ανά χιλιόμετρο</div></div>
-    <div class="sum-card green"><div class="sum-lbl">Αμοιβή Km</div><div class="sum-val" id="s-amt">€ 0.00</div><div class="sum-unit">km × τιμή/km</div></div>
-    <div class="sum-card yellow"><div class="sum-lbl">Γενικό Σύνολο</div><div class="sum-val" id="s-tot">€ 0.00</div><div class="sum-unit">αμοιβή + parking</div></div>
+    <div class="sum-card">
+      <div class="sum-lbl">Σύνολο Χλμ</div>
+      <div class="sum-val" id="s-km">0</div>
+      <div class="sum-unit">χιλιόμετρα</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Τιμή / Χλμ</div>
+      <div class="sum-val" id="s-rate">€0.17</div>
+      <div class="sum-unit">ανά χιλιόμετρο</div>
+    </div>
+    <div class="sum-card green">
+      <div class="sum-lbl">Αμοιβή Km</div>
+      <div class="sum-val" id="s-amt">€ 0.00</div>
+      <div class="sum-unit">km × τιμή/km</div>
+    </div>
+    <div class="sum-card yellow">
+      <div class="sum-lbl">Γενικό Σύνολο</div>
+      <div class="sum-val" id="s-tot">€ 0.00</div>
+      <div class="sum-unit">αμοιβή + parking</div>
+    </div>
   </div>
 
-  <!-- Receipts Panel -->
+  <!-- Receipts panel -->
   <div class="sec-lbl">
-    📎 Επισυναπτόμενες Αποδείξεις
+    &#128206; Επισυναπτόμενες Αποδείξεις
     <div style="display:flex;gap:6px;align-items:center;">
-      <span id="total-receipts-badge" style="font-size:11px;color:var(--purple);font-weight:700;background:var(--purple-lt);padding:2px 8px;border-radius:10px;">0 αρχεία</span>
-      <button class="btn btn-green" onclick="document.getElementById('global-fi').click()" style="font-size:11px;padding:3px 10px;">➕ Προσθήκη</button>
+      <span id="total-receipts-badge"
+            style="font-size:11px;color:var(--purple);font-weight:700;background:var(--purple-lt);padding:2px 8px;border-radius:10px;">
+        0 αρχεία
+      </span>
+      <button class="btn btn-green"
+              onclick="document.getElementById('global-fi').click()"
+              style="font-size:11px;padding:3px 10px;">
+        &#10133; Προσθήκη Απόδειξης
+      </button>
     </div>
   </div>
   <div class="receipts-panel">
     <div style="font-size:11px;color:var(--gray-sub);margin-bottom:8px;">
-      💡 Αποδεκτοί τύποι: <strong>JPG, PNG, PDF</strong> · Μέγ. 10MB ανά αρχείο · Θα επισυναφθούν <strong>αυτόματα</strong> στο email.
+      &#128161; Αποδεκτοί τύποι: <strong>JPG, PNG, PDF</strong>
+      &nbsp;·&nbsp; Μέγ. 10MB ανά αρχείο
+      &nbsp;·&nbsp; Επισυνάπτονται <strong>αυτόματα</strong> στο email
     </div>
     <div class="receipts-grid empty" id="receipts-grid">
-      <div style="text-align:center;color:var(--gray-sub);">📭 Δεν υπάρχουν αποδείξεις ακόμη. Χρησιμοποιήστε <strong>📎</strong> σε κάθε γραμμή.</div>
+      &#128237; Δεν υπάρχουν αποδείξεις. Χρησιμοποιήστε &#128206; σε κάθε γραμμή ή «Προσθήκη» παραπάνω.
     </div>
   </div>
-  <input type="file" id="global-fi" style="display:none;" multiple accept="image/*,.pdf" onchange="handleGlobalUpload(this)">
+  <!-- Hidden global file input -->
+  <input type="file" id="global-fi" style="display:none;" multiple
+         accept="image/*,.pdf" onchange="handleGlobalUpload(this)">
+  <!-- Per-row hidden file inputs will be appended here -->
+  <div id="fi-container" style="display:none;"></div>
 
   <!-- Signatures -->
-  <div class="sec-lbl">✍️ Υπογραφές</div>
+  <div class="sec-lbl">&#9997;&#65039; Υπογραφές</div>
   <div class="sig-grid">
-    <div class="sig-box"><div class="sig-line"></div><div class="sig-lbl">Υπογραφή Υπαλλήλου</div><div class="sig-sub">Employee Signature</div></div>
-    <div class="sig-box"><div class="sig-line"></div><div class="sig-lbl">Διευθυντής / Προϊστάμενος</div><div class="sig-sub">Manager / Supervisor</div></div>
-    <div class="sig-box"><div class="sig-line"></div><div class="sig-lbl">Λογιστήριο</div><div class="sig-sub">Accounting Department</div></div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Υπογραφή Υπαλλήλου</div>
+      <div class="sig-sub">Employee Signature</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Διευθυντής / Προϊστάμενος</div>
+      <div class="sig-sub">Manager / Supervisor</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-lbl">Λογιστήριο</div>
+      <div class="sig-sub">Accounting Department</div>
+    </div>
   </div>
   <div style="padding:8px 20px 12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;border-top:1px solid #edebe9;">
-    <span style="font-size:11px;color:var(--gray-sub);">Ημ. Υποβολής: <input type="date" class="sp-inp" id="f-submit-date" style="width:150px;display:inline-block;font-size:11px;margin-left:4px;"></span>
-    <span style="font-size:11px;color:var(--gray-sub);">Αρ. Εντύπου: <input type="text" class="sp-inp" id="f-form-num" style="width:110px;display:inline-block;font-size:11px;margin-left:4px;" placeholder="CYC-0001"></span>
+    <span style="font-size:11px;color:var(--gray-sub);">
+      Ημ. Υποβολής:
+      <input type="date" class="sp-inp" id="f-submit-date"
+             style="width:150px;display:inline-block;font-size:11px;margin-left:4px;">
+    </span>
+    <span style="font-size:11px;color:var(--gray-sub);">
+      Αρ. Εντύπου:
+      <input type="text" class="sp-inp" id="f-form-num"
+             style="width:110px;display:inline-block;font-size:11px;margin-left:4px;"
+             placeholder="CYC-0001">
+    </span>
   </div>
 
-  <!-- ══════════════════════════════════════
-       SEND PANEL v5 – REAL EMAIL WITH ATTACHMENTS
-  ══════════════════════════════════════ -->
+  <!-- Send panel -->
   <div class="send-panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
       <div class="send-panel-title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        Αποστολή στο Λογιστήριο
+        &#128228; Αποστολή στο Λογιστήριο
       </div>
-      <button class="btn btn-out" onclick="openConfig()" title="Ρυθμίσεις Αποστολής" style="font-size:11px;padding:4px 10px;">
-        ⚙️ Ρυθμίσεις
+      <button class="btn btn-out" onclick="openConfig()"
+              title="Ρυθμίσεις Αποστολής"
+              style="font-size:11px;padding:5px 12px;">
+        &#9881;&#65039; Ρυθμίσεις
       </button>
     </div>
     <div class="send-panel-sub">
-      Επιλέξτε τη μέθοδο αποστολής. Η φόρμα δημιουργείται αυτόματα ως <strong>PDF</strong> και επισυνάπτεται μαζί με τις <strong>αποδείξεις</strong>.
+      Επιλέξτε τη μέθοδο αποστολής. Η φόρμα δημιουργείται αυτόματα ως
+      <strong>PDF</strong> και επισυνάπτεται μαζί με τις <strong>αποδείξεις</strong>.
     </div>
 
-    <!-- Method Selector -->
-    <div class="method-tabs" id="method-tabs">
+    <!-- Method tabs -->
+    <div class="method-tabs">
       <button class="method-tab active" id="tab-m365" onclick="selectMethod('m365')">
-        🏢 Microsoft 365
+        &#127970; Microsoft 365
         <span class="tab-badge">ΣΥΝΙΣΤΑΤAI</span>
       </button>
       <button class="method-tab" id="tab-outlook" onclick="selectMethod('outlook')">
-        📧 Email Client
+        &#128231; Email Client
         <span class="tab-badge" style="background:var(--gray-sub);">ΕΝΑΛΛΑΚΤΙΚΟ</span>
       </button>
     </div>
 
     <!-- Status bar -->
     <div class="send-status-bar notcfg" id="send-status-bar">
-      <span id="send-status-icon">⚠️</span>
-      <span id="send-status-text">Δεν έχετε ρυθμίσει Microsoft 365. Πατήστε <strong>⚙️ Ρυθμίσεις</strong> για να συνδεθείτε ή επιλέξτε Email Client.</span>
+      <span id="send-status-icon">&#9888;&#65039;</span>
+      <span id="send-status-text">
+        Δεν έχετε ρυθμίσει Microsoft 365.
+        Πατήστε <strong>&#9881;&#65039; Ρυθμίσεις</strong> για να συνδεθείτε ή επιλέξτε Email Client.
+      </span>
     </div>
 
     <!-- Send fields -->
     <div class="send-fields">
-      <label>📧 Προς (To):</label>
-      <input type="email" id="send-to" value="accounting@cycert.org.cy" placeholder="accounting@cycert.org.cy">
-      <label>📧 Κοινοποίηση (CC):</label>
+      <label>&#128231; Προς (To):</label>
+      <input type="email" id="send-to" value="accounting@cycert.org.cy">
+      <label>&#128231; Κοινοποίηση (CC):</label>
       <input type="email" id="send-cc" placeholder="manager@cycert.org.cy (προαιρετικό)">
-      <label>📝 Σχόλια:</label>
+      <label>&#128221; Σχόλια:</label>
       <input type="text" id="send-notes" placeholder="Προαιρετικά σχόλια προς το λογιστήριο…">
     </div>
 
     <!-- Action buttons -->
     <div class="send-actions">
       <button class="btn-send-main" onclick="executeSendWorkflow()" id="btn-main-send">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        <span id="btn-main-send-label">📤 Αποστολή με PDF + Αποδείξεις</span>
+        &#128228; <span id="btn-main-send-label">Αποστολή με PDF + Αποδείξεις</span>
       </button>
-      <button class="btn btn-out" onclick="previewPDF()" title="Προεπισκόπηση PDF">
-        👁️ Προεπισκόπηση PDF
+      <button class="btn btn-out" onclick="previewPDF()">
+        &#128065;&#65039; Προεπισκόπηση PDF
       </button>
-      <button class="btn btn-out" onclick="window.print()">🖨️ Εκτύπωση</button>
+      <button class="btn btn-out" onclick="window.print()">&#128424;&#65039; Εκτύπωση</button>
     </div>
 
     <!-- What's included info -->
     <div style="margin-top:10px;padding:10px 14px;background:rgba(0,130,114,.08);border-radius:3px;font-size:11px;color:var(--gray-sub);line-height:1.8;">
-      <strong style="color:var(--teal);">📋 Τι περιλαμβάνει η αποστολή:</strong><br>
-      ✅ <strong>form_odoeporika_[όνομα]_[περίοδος].pdf</strong> – Πλήρης φόρμα οδοιπορικών (αυτόματα)<br>
-      ✅ <strong>Αποδείξεις</strong> – Όλα τα επισυναπτόμενα αρχεία (αυτόματα)<br>
-      ✅ <strong>Σώμα email</strong> – Αναλυτική περίληψη με όλα τα ταξίδια και σύνολα
+      <strong style="color:var(--teal);">&#128203; Τι περιλαμβάνει η αποστολή:</strong><br>
+      &#10003; <strong>form_odoeporika_[όνομα]_[περίοδος].pdf</strong> – Πλήρης φόρμα οδοιπορικών<br>
+      &#10003; <strong>Αποδείξεις</strong> – Όλα τα επισυναπτόμενα αρχεία<br>
+      &#10003; <strong>Σώμα email</strong> – Αναλυτική περίληψη με όλα τα ταξίδια
     </div>
   </div>
 
-  <!-- Action Bar -->
+  <!-- Action bar -->
   <div class="act-bar">
-    <button class="btn btn-blue" onclick="doSave()">💾 Αποθήκευση</button>
-    <button class="btn btn-out" onclick="calcAll()">🗺️ Υπολογισμός Όλων</button>
-    <button class="btn btn-red" onclick="doClear()">🗑️ Εκκαθάριση</button>
+    <button class="btn btn-blue" onclick="doSave()">&#128190; Αποθήκευση</button>
+    <button class="btn btn-out" onclick="calcAll()">&#128506; Υπολογισμός Όλων</button>
+    <button class="btn btn-red" onclick="doClear()">&#128465; Εκκαθάριση</button>
     <span class="last-saved">Αποθήκευση: <span id="last-save-time">–</span></span>
   </div>
 
 </div><!-- /card -->
 </div><!-- /page -->
 
-
-<!-- ════════════ SEND PROGRESS MODAL ════════════ -->
-<div class="snd-overlay" id="snd-overlay">
+<!-- ══════════ SEND PROGRESS MODAL ══════════ -->
+<div class="overlay-bg" id="snd-overlay">
   <div class="snd-box">
     <div class="snd-head">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      &#128228;
       <span class="snd-head-title" id="snd-head-title">Αποστολή στο Λογιστήριο</span>
     </div>
     <div class="snd-body">
       <ul class="snd-steps" id="snd-steps">
-        <li class="snd-step pending" id="step-1"><span class="step-icon">📄</span><span id="step-1-label">Δημιουργία PDF φόρμας…</span></li>
-        <li class="snd-step pending" id="step-2"><span class="step-icon">📎</span><span id="step-2-label">Προετοιμασία αποδείξεων…</span></li>
-        <li class="snd-step pending" id="step-3"><span class="step-icon">🔐</span><span id="step-3-label">Αυθεντικοποίηση…</span></li>
-        <li class="snd-step pending" id="step-4"><span class="step-icon">📧</span><span id="step-4-label">Αποστολή email με συνημμένα…</span></li>
+        <li class="snd-step pending" id="step-1">
+          <span class="step-icon">&#128196;</span>
+          <span id="step-1-lbl">Δημιουργία PDF φόρμας…</span>
+        </li>
+        <li class="snd-step pending" id="step-2">
+          <span class="step-icon">&#128206;</span>
+          <span id="step-2-lbl">Προετοιμασία αποδείξεων…</span>
+        </li>
+        <li class="snd-step pending" id="step-3">
+          <span class="step-icon">&#128272;</span>
+          <span id="step-3-lbl">Αυθεντικοποίηση…</span>
+        </li>
+        <li class="snd-step pending" id="step-4">
+          <span class="step-icon">&#128231;</span>
+          <span id="step-4-lbl">Αποστολή email με συνημμένα…</span>
+        </li>
       </ul>
 
-      <!-- Success box (shown after M365 send) -->
       <div id="success-box" class="success-box" style="display:none;">
-        <div class="sb-icon">✅</div>
+        <div class="sb-icon">&#9989;</div>
         <div class="sb-title">Το email εστάλη επιτυχώς!</div>
         <div class="sb-sub" id="success-detail">Η φόρμα PDF και οι αποδείξεις στάλθηκαν στο Λογιστήριο.</div>
       </div>
 
-      <!-- Fallback box (shown for email client method) -->
       <div id="fallback-box" class="fallback-box" style="display:none;">
-        <div class="fb-title">⚠️ Τελευταίο Βήμα – Επισύναψη στο Email Client</div>
+        <div class="fb-title">&#9888;&#65039; Τελευταίο Βήμα – Επισύναψη στο Email Client</div>
         <div class="attach-step"><span class="as-num">1</span><span>Τα αρχεία κατεβήκαν στον φάκελο <strong>Downloads</strong> (PDF + αποδείξεις σε ZIP)</span></div>
         <div class="attach-step"><span class="as-num">2</span><span>Ο email client άνοιξε με <strong>προ-συμπληρωμένο</strong> παραλήπτη, θέμα και σώμα</span></div>
-        <div class="attach-step"><span class="as-num">3</span><span>Στο email client → <strong>Attach File → Browse → Downloads</strong> → επιλέξτε το ZIP αρχείο</span></div>
-        <div class="attach-step"><span class="as-num">4</span><span>Πατήστε <strong>Send ✉️</strong></span></div>
+        <div class="attach-step"><span class="as-num">3</span><span>Email client → <strong>Attach File → Browse → Downloads</strong> → επιλέξτε το ZIP</span></div>
+        <div class="attach-step"><span class="as-num">4</span><span>Πατήστε <strong>Send &#9993;&#65039;</strong></span></div>
       </div>
 
-      <!-- File checklist -->
       <div class="file-checklist" id="file-checklist" style="display:none;">
-        <div class="file-checklist-title">📁 Συνημμένα Αρχεία:</div>
+        <div class="file-checklist-title">&#128193; Συνημμένα Αρχεία:</div>
         <div id="file-list-items"></div>
       </div>
 
       <div class="snd-actions">
-        <button class="btn btn-out" onclick="closeSendModal()" id="btn-close-modal" style="display:none;">✕ Κλείσιμο</button>
-        <button class="btn-send-main" onclick="reOpenOutlook()" id="btn-reopen-outlook" style="display:none;font-size:12px;padding:7px 14px;">
-          📧 Επαν-άνοιγμα Email Client
+        <button class="btn btn-out" onclick="closeSendModal()"
+                id="btn-close-modal" style="display:none;">&#10005; Κλείσιμο</button>
+        <button class="btn-send-main" onclick="reOpenOutlook()"
+                id="btn-reopen-outlook" style="display:none;font-size:12px;padding:7px 14px;">
+          &#128231; Επαν-άνοιγμα Email Client
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ════════════ CONFIG MODAL ════════════ -->
-<div class="cfg-overlay" id="cfg-overlay">
+<!-- ══════════ CONFIG MODAL ══════════ -->
+<div class="overlay-bg" id="cfg-overlay">
   <div class="cfg-box">
     <div class="cfg-head">
-      <span class="cfg-head-title">⚙️ Ρυθμίσεις Αποστολής Email</span>
-      <button class="m-close" onclick="closeConfig()">✕</button>
+      <span class="cfg-head-title">&#9881;&#65039; Ρυθμίσεις Αποστολής Email</span>
+      <button class="m-close" onclick="closeConfig()">&#10005;</button>
     </div>
     <div class="cfg-body">
 
-      <!-- M365 Section -->
       <div class="cfg-section">
-        <div class="cfg-section-title">🏢 Microsoft 365 – Αποστολή με συνημμένα (Συνιστάται)</div>
+        <div class="cfg-section-title">&#127970; Microsoft 365 – Αυτόματη αποστολή (Συνιστάται)</div>
         <div class="cfg-help">
-          Χρησιμοποιήστε τον λογαριασμό Microsoft 365 της εταιρείας σας για <strong>αυτόματη αποστολή</strong> email με το PDF και τις αποδείξεις ως συνημμένα. Απαιτεί εγγραφή εφαρμογής στο Azure Active Directory (μία φορά από τον IT).
-          <br><br>
-          <strong>📋 Οδηγίες ρύθμισης Azure AD:</strong>
-          Δείτε το αρχείο <strong>GRAPH_SETUP_GUIDE.html</strong> για αναλυτικές οδηγίες.<br><br>
-          <strong>⚠️ Redirect URI για Azure:</strong> Κατά την εγγραφή στο Azure AD, χρησιμοποιήστε ως Redirect URI την παρακάτω διεύθυνση (SPA platform):<br>
-          <code id="cfg-redirect-uri" style="background:#1e1e1e;color:#d4d4d4;padding:3px 6px;border-radius:3px;font-size:11px;display:inline-block;margin-top:4px;word-break:break-all;">φορτώνεται…</code>
+          Χρησιμοποιήστε τον λογαριασμό Microsoft 365 για <strong>αυτόματη αποστολή</strong> email
+          με PDF + αποδείξεις ως συνημμένα. Απαιτεί εγγραφή στο Azure Active Directory (μία φορά από τον IT).<br><br>
+          <strong>Redirect URI (SPA) για Azure AD:</strong><br>
+          <code id="cfg-redirect-uri"
+                style="background:#1e1e1e;color:#d4d4d4;padding:3px 6px;border-radius:3px;
+                       font-size:11px;display:inline-block;margin-top:4px;word-break:break-all;">
+            φορτώνεται…
+          </code>
         </div>
         <div class="cfg-row">
           <label>Application (Client) ID:</label>
-          <input type="text" id="cfg-client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <input type="text" id="cfg-client-id"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
         </div>
         <div class="cfg-row">
           <label>Directory (Tenant) ID:</label>
-          <input type="text" id="cfg-tenant-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (ή 'common')">
+          <input type="text" id="cfg-tenant-id"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-          <button class="btn btn-blue" onclick="saveM365Config()">💾 Αποθήκευση M365 Ρυθμίσεων</button>
-          <button class="btn btn-out" onclick="testM365Login()">🔐 Δοκιμή Σύνδεσης</button>
-          <button class="btn btn-red" onclick="clearM365Config()">🗑️ Εκκαθάριση</button>
+          <button class="btn btn-blue" onclick="saveM365Config()">&#128190; Αποθήκευση</button>
+          <button class="btn btn-out" onclick="testM365Login()">&#128272; Δοκιμή Σύνδεσης</button>
+          <button class="btn btn-red" onclick="clearM365Config()">&#128465; Εκκαθάριση</button>
         </div>
         <div id="cfg-m365-status" style="margin-top:8px;font-size:11px;"></div>
       </div>
 
-      <!-- Email Client Section -->
       <div class="cfg-section">
-        <div class="cfg-section-title">📧 Email Client – Χειροκίνητη επισύναψη (Εναλλακτικό)</div>
+        <div class="cfg-section-title">&#128231; Email Client – Χειροκίνητη επισύναψη (Εναλλακτικό)</div>
         <div class="cfg-help">
-          Αν δεν έχετε πρόσβαση σε Azure AD, χρησιμοποιήστε αυτήν την μέθοδο. Το σύστημα θα <strong>κατεβάσει αυτόματα</strong> το PDF + αποδείξεις σε ZIP αρχείο και θα <strong>ανοίξει</strong> τον email client σας (Outlook, κτλ) με προ-συμπληρωμένο email. Θα χρειαστεί να επισυνάψετε χειροκίνητα το ZIP αρχείο.
+          Χωρίς Azure AD: το σύστημα κατεβάζει αυτόματα PDF + αποδείξεις σε ZIP
+          και ανοίγει τον email client σας με προ-συμπληρωμένο email.
+          Θα χρειαστεί να επισυνάψετε χειροκίνητα το ZIP.
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-teal" onclick="selectMethod('outlook');closeConfig();">✅ Χρήση Email Client</button>
-        </div>
+        <button class="btn btn-teal" onclick="selectMethod('outlook');closeConfig();">
+          &#10003; Χρήση Email Client
+        </button>
       </div>
 
     </div>
@@ -601,1032 +663,1362 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
   </div>
 </div>
 
-<!-- Maps Modal -->
-<div class="m-overlay" id="m-overlay">
+<!-- ══════════ MAPS MODAL ══════════ -->
+<div class="overlay-bg" id="m-overlay">
   <div class="m-box">
     <div class="m-head">
-      <div class="m-head-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        Google Maps – Υπολογισμός Απόστασης
-      </div>
-      <button class="m-close" onclick="closeModal()">✕</button>
+      <div class="m-head-title">&#128506; Google Maps – Υπολογισμός Απόστασης</div>
+      <button class="m-close" onclick="closeModal()">&#10005;</button>
     </div>
     <div class="m-ctrl">
-      <div class="m-inp-grp"><label>🟢 Αναχώρηση</label><input class="m-inp" id="m-from" type="text" placeholder="π.χ. Λευκωσία, Κύπρος"></div>
-      <div class="m-inp-grp"><label>🔴 Προορισμός</label><input class="m-inp" id="m-to" type="text" placeholder="π.χ. Λεμεσός, Κύπρος"></div>
-      <button class="btn-find" onclick="findRoute()">🔍 Εύρεση</button>
+      <div class="m-inp-grp">
+        <label>&#128994; Αναχώρηση</label>
+        <input class="m-inp" id="m-from" type="text" placeholder="π.χ. Λευκωσία, Κύπρος">
+      </div>
+      <div class="m-inp-grp">
+        <label>&#128308; Προορισμός</label>
+        <input class="m-inp" id="m-to" type="text" placeholder="π.χ. Λεμεσός, Κύπρος">
+      </div>
+      <button class="btn-find" onclick="findRoute()">&#128269; Εύρεση</button>
     </div>
     <div class="m-result" id="m-result">
       <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-        <div><div class="dist-big" id="m-dist">–</div><div class="dist-lbl">km</div></div>
-        <div style="border-left:2px solid #edebe9;padding-left:18px;"><div class="dur-val" id="m-dur">–</div><div class="dist-lbl">χρόνος</div></div>
+        <div>
+          <div class="dist-big" id="m-dist">–</div>
+          <div class="dist-lbl">km</div>
+        </div>
+        <div style="border-left:2px solid #edebe9;padding-left:18px;">
+          <div class="dur-val" id="m-dur">–</div>
+          <div class="dist-lbl">χρόνος</div>
+        </div>
         <div style="border-left:2px solid #edebe9;padding-left:18px;" id="m-ri"></div>
       </div>
       <div class="m-use-btns">
-        <button class="btn-use" onclick="useKm(1)">✅ Χρήση (A→B)</button>
-        <button class="btn-use-rt" onclick="useKm(2)">🔄 Μετ/Επιστρ. (x2)</button>
+        <button class="btn-use" onclick="useKm(1)">&#10003; Χρήση A&#8594;B (×1)</button>
+        <button class="btn-use-rt" onclick="useKm(2)">&#128260; Μετ/Επιστρ. (×2)</button>
       </div>
     </div>
-    <div id="m-frame-wrap">
+    <div class="m-frame-wrap" id="m-frame-wrap">
       <div class="m-ph" id="m-ph">
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="#0078d4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <div>Εισάγετε αναχώρηση &amp; προορισμό<br>και πατήστε Εύρεση</div>
+        &#128506;&#65039;<br>Εισάγετε αναχώρηση &amp; προορισμό και πατήστε Εύρεση
       </div>
-      <iframe id="m-iframe" src="" style="display:none;" width="100%" height="400" frameborder="0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <iframe id="m-iframe" src="" style="display:none;"
+              width="100%" height="400" frameborder="0"
+              allowfullscreen loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
 </div>
 
+<!-- Toast notification -->
 <div class="toast" id="toast"></div>
-<div id="fi-container" style="display:none;"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-/* ═══════════════════════════════════════════════════════════
-   CYCERT ODOEPORIKA v5.0 – Microsoft Graph API + Fallback
-   ═══════════════════════════════════════════════════════════ */
+/* ==========================================================
+   CyCert Odoeporika v7 - Complete rewrite
+   Fixes: encoding, CDN order, modal visibility, row creation
+   ========================================================== */
+
+'use strict';
 
 /* ── STATE ── */
-var rowCount=0, activeRow=null, foundKm=null, toastTmr;
-var receipts=[], rcptId=0;
-var lastMailtoStr='';
-var sendMethod='m365'; // 'm365' or 'outlook'
-var msalInstance=null;
+var rowCount = 0;
+var activeRow = null;
+var foundKm = null;
+var toastTimer = null;
+var receipts = [];
+var rcptId = 0;
+var lastMailtoStr = '';
+var sendMethod = 'outlook'; // default until M365 configured
+var msalInstance = null;
 
-/* ── MSAL CONFIG (from localStorage) ── */
-var M365_CFG={clientId:'',tenantId:'',configured:false};
-function loadM365Config(){
-  try{
-    var s=localStorage.getItem('cycert_m365');
-    if(s){var c=JSON.parse(s);M365_CFG=c;}
-  }catch(e){}
+/* ── M365 CONFIG ── */
+var M365_CFG = { clientId: '', tenantId: '', configured: false };
+
+function loadM365Config() {
+  try {
+    var s = localStorage.getItem('cycert_m365');
+    if (s) { M365_CFG = JSON.parse(s); }
+  } catch (e) { /* ignore */ }
 }
-function saveM365ConfigToStorage(){
-  localStorage.setItem('cycert_m365',JSON.stringify(M365_CFG));
+
+function saveM365ConfigToStorage() {
+  try { localStorage.setItem('cycert_m365', JSON.stringify(M365_CFG)); } catch (e) { /* ignore */ }
 }
 
 /* ── MSAL INIT ── */
-function initMSAL(){
-  if(!M365_CFG.configured||!M365_CFG.clientId||!M365_CFG.tenantId){return false;}
-
-  // ── Verify MSAL library is actually loaded ──
-  if(typeof msal==='undefined'){
-    throw new Error(
-      'Η βιβλιοθήκη MSAL δεν φορτώθηκε (δεν υπάρχει σύνδεση ή το CDN απέτυχε). '+
-      'Ελέγξτε τη σύνδεση internet και ανανεώστε τη σελίδα.'
-    );
+function initMSAL() {
+  if (!M365_CFG.configured || !M365_CFG.clientId || !M365_CFG.tenantId) { return false; }
+  if (typeof msal === 'undefined') {
+    throw new Error('Η βιβλιοθήκη MSAL δεν φορτώθηκε. Ελέγξτε τη σύνδεση internet και ανανεώστε τη σελίδα.');
   }
-
-  // ── Build redirect URI (must match Azure AD registration exactly) ──
-  var redirectUri=window.location.origin+window.location.pathname;
-  // Ensure trailing slash consistency
-  if(!redirectUri.endsWith('/'))redirectUri+='/';
-
-  try{
-    var msalConfig={
-      auth:{
-        clientId:M365_CFG.clientId,
-        authority:'https://login.microsoftonline.com/'+M365_CFG.tenantId,
-        redirectUri:redirectUri
+  var redirectUri = window.location.origin + window.location.pathname;
+  if (!redirectUri.endsWith('/')) { redirectUri += '/'; }
+  try {
+    msalInstance = new msal.PublicClientApplication({
+      auth: {
+        clientId: M365_CFG.clientId,
+        authority: 'https://login.microsoftonline.com/' + M365_CFG.tenantId,
+        redirectUri: redirectUri
       },
-      cache:{
-        cacheLocation:'localStorage',
-        storeAuthStateInCookie:true
-      },
-      system:{
-        allowRedirectInIframe:true,   // Required when inside SharePoint iframe
-        windowHashTimeout:9000,
-        iframeHashTimeout:9000,
-        loggerOptions:{
-          loggerCallback:function(level,msg,containsPii){
-            if(!containsPii)console.log('[MSAL]',msg);
-          },
-          piiLoggingEnabled:false
-        }
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
+      system: {
+        allowRedirectInIframe: true,
+        windowHashTimeout: 9000,
+        iframeHashTimeout: 9000
       }
-    };
-    msalInstance=new msal.PublicClientApplication(msalConfig);
-    console.log('[CyCert] MSAL initialised. Redirect URI:',redirectUri);
+    });
     return true;
-  }catch(e){
-    console.error('[CyCert] MSAL constructor error:',e);
-    throw new Error('MSAL αρχικοποίηση απέτυχε: '+e.message);
+  } catch (e) {
+    throw new Error('MSAL αρχικοποίηση απέτυχε: ' + e.message);
   }
 }
 
-async function getAccessToken(){
-  if(!msalInstance)throw new Error('MSAL δεν έχει αρχικοποιηθεί. Αποθηκεύστε τις ρυθμίσεις πρώτα.');
-  var scopes=['https://graph.microsoft.com/Mail.Send'];
-  var accounts=msalInstance.getAllAccounts();
-  if(accounts.length>0){
-    try{
-      var r=await msalInstance.acquireTokenSilent({scopes:scopes,account:accounts[0]});
+async function getAccessToken() {
+  if (!msalInstance) { throw new Error('MSAL δεν έχει αρχικοποιηθεί.'); }
+  var scopes = ['https://graph.microsoft.com/Mail.Send'];
+  var accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    try {
+      var r = await msalInstance.acquireTokenSilent({ scopes: scopes, account: accounts[0] });
       return r.accessToken;
-    }catch(e){
-      console.warn('[CyCert] Silent token failed, falling back to popup:',e.message);
-    }
+    } catch (e) { /* fall through to popup */ }
   }
-  try{
-    var r=await msalInstance.loginPopup({
-      scopes:scopes,
-      prompt:'select_account',
-      popupWindowAttributes:{
-        popupSize:{width:500,height:600},
-        popupPosition:{top:100,left:200}
-      }
-    });
+  try {
+    var r = await msalInstance.loginPopup({ scopes: scopes, prompt: 'select_account' });
     return r.accessToken;
-  }catch(e){
-    if(e.errorCode==='popup_window_error'||e.message.indexOf('popup')>-1){
-      throw new Error(
-        'Το popup για σύνδεση Microsoft μπλοκαρίστηκε από τον browser. '+
-        'Κλικ στο εικονίδιο 🚫 ή 🔒 στη γραμμή διευθύνσεων → "Allow popups" και δοκιμάστε ξανά.'
-      );
+  } catch (e) {
+    if (e.errorCode === 'popup_window_error' || (e.message && e.message.indexOf('popup') > -1)) {
+      throw new Error('Το popup μπλοκαρίστηκε. Επιτρέψτε popups για αυτή τη σελίδα και δοκιμάστε ξανά.');
     }
     throw e;
   }
 }
 
-/* ── INIT ── */
-(function(){
-  loadM365Config();
+/* ── STARTUP (IIFE) ── */
+(function init() {
+  try {
+    loadM365Config();
 
-  // Show the actual redirect URI so user can copy it into Azure
-  var redirectUri=window.location.origin+window.location.pathname;
-  if(!redirectUri.endsWith('/'))redirectUri+='/';
-  var ruEl=document.getElementById('cfg-redirect-uri');
-  if(ruEl)ruEl.textContent=redirectUri;
+    // Show redirect URI in config modal
+    var redirectUri = window.location.origin + window.location.pathname;
+    if (!redirectUri.endsWith('/')) { redirectUri += '/'; }
+    var ruEl = document.getElementById('cfg-redirect-uri');
+    if (ruEl) { ruEl.textContent = redirectUri; }
 
-  var msalOk=false;
-  try{
-    if(M365_CFG.configured)msalOk=initMSAL();
-  }catch(e){
-    console.warn('[CyCert] Auto-init MSAL failed:',e.message);
+    // Try to init MSAL if configured
+    var msalOk = false;
+    if (M365_CFG.configured) {
+      try { msalOk = initMSAL(); } catch (e) { /* warn silently */ }
+    }
+    sendMethod = msalOk ? 'm365' : 'outlook';
+    selectMethod(sendMethod);
+    updateStatusBar();
+
+    // Set default dates
+    var now = new Date();
+    var periodEl = document.getElementById('f-period');
+    if (periodEl) {
+      periodEl.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    var submitEl = document.getElementById('f-submit-date');
+    if (submitEl) { submitEl.value = now.toISOString().split('T')[0]; }
+
+    // Set ref numbers
+    var refEl = document.getElementById('ref-num');
+    if (refEl) { refEl.textContent = String(Math.floor(Math.random() * 900) + 100); }
+    var formNumEl = document.getElementById('f-form-num');
+    if (formNumEl) { formNumEl.value = 'CYC-' + String(Math.floor(Math.random() * 9000) + 1000); }
+
+    // Create 15 rows
+    for (var i = 0; i < 15; i++) { addRow(false); }
+    recalc();
+
+  } catch (err) {
+    console.error('[CyCert] Startup error:', err);
   }
-  if(msalOk){
-    sendMethod='m365';
-    selectMethod('m365');
-  } else {
-    sendMethod='outlook';
-    selectMethod('outlook');
-  }
-  updateStatusBar();
-  var now=new Date();
-  document.getElementById('f-period').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  document.getElementById('f-submit-date').value=now.toISOString().split('T')[0];
-  document.getElementById('ref-num').textContent=String(Math.floor(Math.random()*900)+100);
-  document.getElementById('f-form-num').value='CYC-'+String(Math.floor(Math.random()*9000)+1000);
-  for(var i=0;i<15;i++) addRow(false);
-  recalc();
 })();
 
 /* ── METHOD SELECTOR ── */
-function selectMethod(m){
-  sendMethod=m;
-  document.getElementById('tab-m365').className='method-tab'+(m==='m365'?' active':'');
-  document.getElementById('tab-outlook').className='method-tab'+(m==='outlook'?' active':'');
-  var lbl=document.getElementById('btn-main-send-label');
-  if(m==='m365'){
-    lbl.textContent='📤 Αποστολή με Microsoft 365 (PDF + Αποδείξεις)';
-  }else{
-    lbl.textContent='📥 Λήψη ZIP + Άνοιγμα Email Client';
+function selectMethod(m) {
+  sendMethod = m;
+  var tab365 = document.getElementById('tab-m365');
+  var tabOut = document.getElementById('tab-outlook');
+  var lbl = document.getElementById('btn-main-send-label');
+  if (tab365) { tab365.className = 'method-tab' + (m === 'm365' ? ' active' : ''); }
+  if (tabOut) { tabOut.className = 'method-tab' + (m === 'outlook' ? ' active' : ''); }
+  if (lbl) {
+    lbl.textContent = m === 'm365'
+      ? 'Αποστολή με Microsoft 365 (PDF + Αποδείξεις)'
+      : 'Λήψη ZIP + Άνοιγμα Email Client';
   }
   updateStatusBar();
 }
 
-function updateStatusBar(){
-  var bar=document.getElementById('send-status-bar');
-  var icon=document.getElementById('send-status-icon');
-  var txt=document.getElementById('send-status-text');
-  if(sendMethod==='m365'){
-    if(M365_CFG.configured){
-      bar.className='send-status-bar ready';
-      icon.textContent='✅';
-      txt.innerHTML='Microsoft 365 <strong>ρυθμισμένο</strong>. Το email θα σταλεί αυτόματα με PDF + αποδείξεις ως συνημμένα.';
-    }else{
-      bar.className='send-status-bar notcfg';
-      icon.textContent='⚠️';
-      txt.innerHTML='Δεν έχετε ρυθμίσει Microsoft 365. Πατήστε <strong>⚙️ Ρυθμίσεις</strong> για να εισάγετε τα στοιχεία Azure AD.';
+function updateStatusBar() {
+  var bar = document.getElementById('send-status-bar');
+  var icon = document.getElementById('send-status-icon');
+  var txt = document.getElementById('send-status-text');
+  if (!bar || !icon || !txt) { return; }
+  if (sendMethod === 'm365') {
+    if (M365_CFG.configured) {
+      bar.className = 'send-status-bar ready';
+      icon.textContent = '\u2705';
+      txt.innerHTML = 'Microsoft 365 <strong>ρυθμισμένο</strong>. Email θα σταλεί αυτόματα με PDF + αποδείξεις.';
+    } else {
+      bar.className = 'send-status-bar notcfg';
+      icon.textContent = '\u26a0\ufe0f';
+      txt.innerHTML = 'Δεν έχετε ρυθμίσει Microsoft 365. Πατήστε <strong>\u2699\ufe0f Ρυθμίσεις</strong>.';
     }
-  }else{
-    bar.className='send-status-bar m365';
-    icon.textContent='ℹ️';
-    txt.innerHTML='<strong>Email Client:</strong> Το ZIP (PDF + αποδείξεις) θα κατεβεί αυτόματα. Θα χρειαστεί να το επισυνάψετε χειροκίνητα στον email client.';
+  } else {
+    bar.className = 'send-status-bar m365';
+    icon.textContent = '\u2139\ufe0f';
+    txt.innerHTML = '<strong>Email Client:</strong> ZIP (PDF + αποδείξεις) θα κατεβεί αυτόματα. Επισύναψη χειροκίνητα.';
   }
 }
 
-/* ── ROWS ── */
-function addRow(animate){
+/* ── ADD ROW ── */
+function addRow(animate) {
   rowCount++;
-  var r=rowCount;
-  var fi=document.createElement('input');
-  fi.type='file';fi.id='fi-'+r;fi.multiple=true;fi.accept='image/*,.pdf';fi.style.display='none';
-  fi.setAttribute('data-row',r);fi.onchange=function(){handleRowUpload(this);};
-  document.getElementById('fi-container').appendChild(fi);
-  var tbody=document.getElementById('tbody');
-  var tr=document.createElement('tr');tr.id='tr-'+r;
-  tr.innerHTML='<td class="rn">'+r+'</td>'+
-    '<td><input type="date" class="ci dt" id="d-'+r+'" oninput="recalc()"></td>'+
-    '<td class="rt-cell">'+
-      '<div class="rt-row"><span class="rt-lbl from">ΑΠΟ</span><input type="text" class="ci" id="fr-'+r+'" placeholder="Αναχώρηση…" style="flex:1;"></div>'+
-      '<div class="rt-row"><span class="rt-lbl to">ΠΡΟΣ</span><input type="text" class="ci" id="to-'+r+'" placeholder="Προορισμός…" style="flex:1;"></div>'+
-      '<input type="text" class="ci" id="pu-'+r+'" placeholder="Σκοπός ταξιδιού…" style="font-size:11px;color:var(--gray-sub);font-style:italic;margin-top:2px;">'+
-    '</td>'+
-    '<td style="text-align:center;"><input type="number" class="ci num park" id="pk-'+r+'" placeholder="0.00" min="0" step="0.01" oninput="recalc()"></td>'+
-    '<td style="text-align:center;"><input type="number" class="ci num km" id="km-'+r+'" placeholder="0" min="0" step="0.1" oninput="recalc()"><div class="km-st" id="ks-'+r+'"></div><label style="font-size:10px;color:#6264a7;cursor:pointer;display:block;margin-top:2px;" title="Μετ/επιστρ. x2"><input type="checkbox" id="rt-'+r+'" style="margin-right:2px;"> 🔄Μ/Ε</label></td>'+
-    '<td style="text-align:center;vertical-align:middle;"><button class="btn-maps" onclick="openModal('+r+')">🗺️ Maps</button><br><a class="gmaps-link" id="gl-'+r+'" href="#" target="_blank" rel="noopener">🔗 Χάρτης</a></td>'+
-    '<td class="rcpt-cell"><button class="btn-attach-row" onclick="document.getElementById(\'fi-'+r+'\').click()">📎 Επισύναψη</button><span class="rcpt-count" id="rc-'+r+'"></span></td>';
-  if(animate){tr.style.opacity='0';tr.style.transform='translateY(-8px)';}
+  var r = rowCount;
+
+  // Per-row hidden file input
+  var fi = document.createElement('input');
+  fi.type = 'file';
+  fi.id = 'fi-' + r;
+  fi.multiple = true;
+  fi.accept = 'image/*,.pdf';
+  fi.style.display = 'none';
+  fi.setAttribute('data-row', String(r));
+  fi.onchange = function () { handleRowUpload(this); };
+  var container = document.getElementById('fi-container');
+  if (container) { container.appendChild(fi); }
+
+  var tbody = document.getElementById('tbody');
+  if (!tbody) { return; }
+
+  var tr = document.createElement('tr');
+  tr.id = 'tr-' + r;
+
+  tr.innerHTML =
+    '<td class="rn">' + r + '</td>' +
+    '<td><input type="date" class="ci dt" id="d-' + r + '" oninput="recalc()"></td>' +
+    '<td class="rt-cell">' +
+      '<div class="rt-row">' +
+        '<span class="rt-lbl from">&#128994;</span>' +
+        '<input type="text" class="ci" id="fr-' + r + '" placeholder="Αναχώρηση\u2026" style="flex:1;">' +
+      '</div>' +
+      '<div class="rt-row">' +
+        '<span class="rt-lbl to">&#128308;</span>' +
+        '<input type="text" class="ci" id="to-' + r + '" placeholder="Προορισμός\u2026" style="flex:1;">' +
+      '</div>' +
+      '<input type="text" class="ci" id="pu-' + r + '" placeholder="Σκοπός ταξιδιού\u2026" ' +
+        'style="font-size:11px;color:var(--gray-sub);font-style:italic;margin-top:2px;">' +
+    '</td>' +
+    '<td style="text-align:center;">' +
+      '<input type="number" class="ci num park" id="pk-' + r + '" ' +
+        'placeholder="0.00" min="0" step="0.01" oninput="recalc()">' +
+    '</td>' +
+    '<td style="text-align:center;">' +
+      '<input type="number" class="ci num km" id="km-' + r + '" ' +
+        'placeholder="0" min="0" step="0.1" oninput="recalc()">' +
+      '<div class="km-st" id="ks-' + r + '"></div>' +
+      '<label class="rt-chk-lbl" title="\u039c\u03b5\u03c4/\u03b5\u03c0\u03b9\u03c3\u03c4\u03c1. \u00d72">' +
+        '<input type="checkbox" id="rt-' + r + '"> &#128260;&#924;/&#917;' +
+      '</label>' +
+    '</td>' +
+    '<td style="text-align:center;vertical-align:middle;">' +
+      '<button class="btn-maps" onclick="openModal(' + r + ')">&#128506; Maps</button><br>' +
+      '<a class="gmaps-link" id="gl-' + r + '" href="#" target="_blank" ' +
+        'rel="noopener noreferrer">&#128279; &#935;&#940;&#961;&#964;&#951;&#962;</a>' +
+    '</td>' +
+    '<td class="rcpt-cell">' +
+      '<button class="btn-attach-row" onclick="document.getElementById(\'fi-' + r + '\').click()">' +
+        '&#128206; &#917;&#960;&#953;&#963;&#973;&#957;&#945;&#968;&#951;' +
+      '</button>' +
+      '<span class="rcpt-count" id="rc-' + r + '"></span>' +
+    '</td>';
+
+  if (animate) {
+    tr.style.opacity = '0';
+    tr.style.transform = 'translateY(-8px)';
+  }
   tbody.appendChild(tr);
-  if(animate){setTimeout(function(){tr.style.transition='opacity .25s,transform .25s';tr.style.opacity='1';tr.style.transform='translateY(0)';},10);toast('✅ Νέα γραμμή','ok');}
+  if (animate) {
+    setTimeout(function () {
+      tr.style.transition = 'opacity .25s,transform .25s';
+      tr.style.opacity = '1';
+      tr.style.transform = 'translateY(0)';
+    }, 10);
+    toast('\u2705 \u039d\u03ad\u03b1 \u03b3\u03c1\u03b1\u03bc\u03bc\u03ae #' + r, 'ok');
+  }
 }
 
-/* ── TOTALS ── */
-function recalc(){
-  var totKm=0,totPk=0;
-  var rate=parseFloat(document.getElementById('f-rate').value)||0.17;
-  for(var i=1;i<=rowCount;i++){
-    totKm+=parseFloat((document.getElementById('km-'+i)||{}).value)||0;
-    totPk+=parseFloat((document.getElementById('pk-'+i)||{}).value)||0;
+/* ── RECALC TOTALS ── */
+function recalc() {
+  var totKm = 0, totPk = 0;
+  var rate = parseFloat((document.getElementById('f-rate') || {}).value) || 0.17;
+  for (var i = 1; i <= rowCount; i++) {
+    var kmEl = document.getElementById('km-' + i);
+    var pkEl = document.getElementById('pk-' + i);
+    if (kmEl) { totKm += parseFloat(kmEl.value) || 0; }
+    if (pkEl) { totPk += parseFloat(pkEl.value) || 0; }
   }
-  var amt=totKm*rate,grand=amt+totPk;
-  set('t-park','€ '+totPk.toFixed(2));set('t-km',totKm.toFixed(1)+' km');
-  set('t-amt','€ '+amt.toFixed(2));set('t-tot','€ '+grand.toFixed(2));
-  set('s-km',totKm.toFixed(1));set('s-rate','€'+rate.toFixed(2));
-  set('s-amt','€ '+amt.toFixed(2));set('s-tot','€ '+grand.toFixed(2));
+  var amt = totKm * rate;
+  var grand = amt + totPk;
+  setEl('t-park', '\u20ac ' + totPk.toFixed(2));
+  setEl('t-km', totKm.toFixed(1) + ' km');
+  setEl('t-amt', '\u20ac ' + amt.toFixed(2));
+  setEl('t-tot', '\u20ac ' + grand.toFixed(2));
+  setEl('s-km', totKm.toFixed(1));
+  setEl('s-rate', '\u20ac' + rate.toFixed(2));
+  setEl('s-amt', '\u20ac ' + amt.toFixed(2));
+  setEl('s-tot', '\u20ac ' + grand.toFixed(2));
 }
-function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+
+function setEl(id, v) {
+  var e = document.getElementById(id);
+  if (e) { e.textContent = v; }
+}
 
 /* ── RECEIPTS ── */
-function handleRowUpload(input){processFiles(input.files,parseInt(input.getAttribute('data-row')));input.value='';}
-function handleGlobalUpload(input){processFiles(input.files,0);input.value='';}
-function processFiles(files,rowNum){
-  for(var i=0;i<files.length;i++){
-    var f=files[i];
-    if(f.size>10*1024*1024){toast('⚠️ '+f.name+' > 10MB','bad');continue;}
-    var ok=['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
-    if(ok.indexOf(f.type)===-1){toast('⚠️ Μη αποδεκτός τύπος','bad');continue;}
-    (function(file,row){
-      var reader=new FileReader();
-      reader.onload=function(e){
+function handleRowUpload(input) {
+  processFiles(input.files, parseInt(input.getAttribute('data-row'), 10));
+  input.value = '';
+}
+function handleGlobalUpload(input) {
+  processFiles(input.files, 0);
+  input.value = '';
+}
+function processFiles(files, rowNum) {
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (f.size > 10 * 1024 * 1024) { toast('\u26a0\ufe0f ' + f.name + ' > 10MB', 'bad'); continue; }
+    var okTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (okTypes.indexOf(f.type) === -1) { toast('\u26a0\ufe0f \u039c\u03b7 \u03b1\u03c0\u03bf\u03b4\u03b5\u03ba\u03c4\u03cc\u03c2 \u03c4\u03cd\u03c0\u03bf\u03c2 \u03b1\u03c1\u03c7\u03b5\u03af\u03bf\u03c5', 'bad'); continue; }
+    (function (file, row) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
         rcptId++;
-        receipts.push({id:rcptId,rowNum:row,file:file,name:file.name,size:file.size,type:file.type,dataURL:e.target.result});
-        renderReceipts();updateRowBadge(row);
-        toast('📎 '+file.name,'ok');
-      };reader.readAsDataURL(file);
-    })(f,rowNum);
+        receipts.push({
+          id: rcptId, rowNum: row, file: file,
+          name: file.name, size: file.size,
+          type: file.type, dataURL: e.target.result
+        });
+        renderReceipts();
+        updateRowBadge(row);
+        toast('\ud83d\udcd4 ' + file.name, 'ok');
+      };
+      reader.readAsDataURL(file);
+    })(f, rowNum);
   }
 }
-function renderReceipts(){
-  var grid=document.getElementById('receipts-grid');
-  var total=receipts.length;
-  set('total-receipts-badge',total+' αρχεί'+(total===1?'ο':'α'));
-  if(total===0){grid.className='receipts-grid empty';grid.innerHTML='<div style="text-align:center;color:var(--gray-sub);">📭 Δεν υπάρχουν αποδείξεις.</div>';return;}
-  grid.className='receipts-grid';grid.innerHTML='';
-  receipts.forEach(function(r){
-    var div=document.createElement('div');div.className='receipt-thumb';
-    var badge=r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.';
-    var preview=r.type==='application/pdf'?'<div class="pdf-icon">📄</div>':'<img src="'+r.dataURL+'" alt="'+r.name+'" loading="lazy">';
-    div.innerHTML='<span class="rcpt-row-badge">'+badge+'</span>'+
-      '<button class="rcpt-del" onclick="removeReceipt('+r.id+')">×</button>'+
-      preview+'<div class="rcpt-info">'+r.name.substring(0,20)+(r.name.length>20?'…':'')+'<br><span style="color:#a19f9d;">'+(r.size/1024).toFixed(0)+' KB</span></div>';
+function renderReceipts() {
+  var grid = document.getElementById('receipts-grid');
+  if (!grid) { return; }
+  var total = receipts.length;
+  setEl('total-receipts-badge', total + ' \u03b1\u03c1\u03c7\u03b5\u03af' + (total === 1 ? '\u03bf' : '\u03b1'));
+  if (total === 0) {
+    grid.className = 'receipts-grid empty';
+    grid.innerHTML = '\ud83d\udced \u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03b1\u03c0\u03bf\u03b4\u03b5\u03af\u03be\u03b5\u03b9\u03c2.';
+    return;
+  }
+  grid.className = 'receipts-grid';
+  grid.innerHTML = '';
+  receipts.forEach(function (rc) {
+    var div = document.createElement('div');
+    div.className = 'receipt-thumb';
+    var badge = rc.rowNum > 0 ? '\u0393\u03c1.' + rc.rowNum : '\u0393\u03b5\u03bd.';
+    var preview = rc.type === 'application/pdf'
+      ? '<div class="pdf-icon">\ud83d\udcc4</div>'
+      : '<img src="' + rc.dataURL + '" alt="' + rc.name + '" loading="lazy">';
+    div.innerHTML =
+      '<span class="rcpt-row-badge">' + badge + '</span>' +
+      '<button class="rcpt-del" onclick="removeReceipt(' + rc.id + ')">\u00d7</button>' +
+      preview +
+      '<div class="rcpt-info">' +
+        rc.name.substring(0, 20) + (rc.name.length > 20 ? '\u2026' : '') +
+        '<br><span style="color:#a19f9d;">' + (rc.size / 1024).toFixed(0) + ' KB</span>' +
+      '</div>';
     grid.appendChild(div);
   });
 }
-function removeReceipt(id){
-  var r=receipts.find(function(x){return x.id===id;});
-  var row=r?r.rowNum:0;
-  receipts=receipts.filter(function(x){return x.id!==id;});
-  renderReceipts();updateRowBadge(row);
+function removeReceipt(id) {
+  var rc = receipts.find(function (x) { return x.id === id; });
+  var row = rc ? rc.rowNum : 0;
+  receipts = receipts.filter(function (x) { return x.id !== id; });
+  renderReceipts();
+  updateRowBadge(row);
 }
-function updateRowBadge(rowNum){
-  if(rowNum<=0)return;
-  var cnt=receipts.filter(function(x){return x.rowNum===rowNum;}).length;
-  var b=document.getElementById('rc-'+rowNum);
-  if(b)b.textContent=cnt>0?cnt+' αρχεί'+(cnt===1?'ο':'α'):'';
-}
-
-/* ═══════════════════════════════════════════
-   PDF GENERATION (html2canvas → jsPDF) - FIX for Greek text
-═══════════════════════════════════════════ */
-function buildPrintBody(){
-  var name=document.getElementById('f-name').value||'–';
-  var pos=document.getElementById('f-pos').value||'–';
-  var veh=document.getElementById('f-veh').value||'–';
-  var dept=document.getElementById('f-dept').value||'–';
-  var period=document.getElementById('f-period').value||'–';
-  var ref=document.getElementById('f-form-num').value||'–';
-  var submitDate=document.getElementById('f-submit-date').value||'–';
-  var rate=parseFloat(document.getElementById('f-rate').value)||0.17;
-  var totKm=document.getElementById('s-km').textContent||'0';
-  var totAmt=document.getElementById('s-amt').textContent||'EUR 0.00';
-  var totPk=document.getElementById('t-park').textContent||'EUR 0.00';
-  var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
-  var notes=document.getElementById('send-notes').value||'';
-  var rowsHtml='';
-  for(var i=1;i<=rowCount;i++){
-    var dv=(document.getElementById('d-'+i)||{value:''}).value;
-    var fv=(document.getElementById('fr-'+i)||{value:''}).value;
-    var tv=(document.getElementById('to-'+i)||{value:''}).value;
-    var pv=(document.getElementById('pu-'+i)||{value:''}).value;
-    var pk=(document.getElementById('pk-'+i)||{value:''}).value;
-    var km=(document.getElementById('km-'+i)||{value:''}).value;
-    if(!dv&&!fv&&!tv&&!km&&!pk)continue;
-    var rtEl=document.getElementById('rt-'+i);
-    var rtNote=rtEl&&rtEl.checked?' <span style="color:#6264a7;font-size:10px;">(Μ/Ε)</span>':'';
-    var bg=(rowsHtml.split('<tr').length-1)%2===0?'#ffffff':'#faf9f8';
-    rowsHtml+='<tr style="background:'+bg+'">';
-    rowsHtml+='<td style="text-align:center;font-weight:700;color:#0078d4;">'+i+'</td>';
-    rowsHtml+='<td>'+(dv||'–')+'</td>';
-    rowsHtml+='<td><span style="color:#107c10;font-weight:600;">'+(fv||'–')+'</span><br>→ <span style="color:#d83b01;font-weight:600;">'+(tv||'–')+'</span></td>';
-    rowsHtml+='<td>'+(pv||'–')+'</td>';
-    rowsHtml+='<td style="text-align:center;">'+(pk?'€'+parseFloat(pk).toFixed(2):'–')+'</td>';
-    rowsHtml+='<td style="text-align:center;font-weight:700;color:#0078d4;">'+(km?km+' km'+rtNote:'–')+'</td>';
-    rowsHtml+='</tr>';
-  }
-  if(!rowsHtml)rowsHtml='<tr><td colspan="6" style="text-align:center;color:#999;">Δεν υπάρχουν εγγραφές</td></tr>';
-  var rcpHtml='';
-  if(receipts.length>0){
-    rcpHtml='<div style="margin-top:14px;background:#f3f2f1;border-left:4px solid #0078d4;padding:8px 12px;">';
-    rcpHtml+='<div style="font-weight:700;font-size:11px;color:#0078d4;margin-bottom:4px;">📎 Αρχεία ('+receipts.length+')</div>';
-    receipts.forEach(function(r,idx){rcpHtml+='<div style="font-size:11px;">'+(idx+1)+'. '+r.name+' ('+(r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.')+') – '+(r.size/1024).toFixed(0)+' KB</div>';});
-    rcpHtml+='</div>';
-  }
-  var notesHtml=notes?'<div style="margin-top:10px;padding:7px 12px;background:#fff4ce;border-left:3px solid #d04e00;font-size:12px;">📝 '+notes+'</div>':'';
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
-    +'body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#323130;margin:0;padding:0;width:794px;background:#fff;}'
-    +'.hdr{background:#0078d4;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:14px;}'
-    +'.badge{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#0078d4;line-height:1.1;text-align:center;}'
-    +'.co-info{flex:1;}.co-name{font-size:12px;font-weight:700;}.co-addr{font-size:10px;opacity:.85;margin-top:2px;}'
-    +'.form-title-box{text-align:right;}.form-title-main{font-size:15px;font-weight:800;}.form-tag{font-size:9px;opacity:.8;}'
-    +'.ref-bar{background:#f3f2f1;padding:6px 18px;font-size:11px;display:flex;gap:24px;border-bottom:1px solid #edebe9;}'
-    +'.ref-bar span{font-weight:700;color:#0078d4;margin-right:3px;}'
-    +'.sec-hdr{background:#0078d4;color:#fff;padding:5px 12px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:12px;}'
-    +'.emp-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
-    +'.emp-cell{padding:6px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
-    +'.emp-cell label{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;display:block;}'
-    +'.emp-cell .val{font-size:13px;font-weight:600;}'
-    +'table{width:100%;border-collapse:collapse;margin-top:3px;font-size:12px;}'
-    +'thead tr{background:#0078d4;color:#fff;}'
-    +'thead th{padding:6px 7px;text-align:left;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.2);}'
-    +'tbody td{padding:4px 7px;border:1px solid #edebe9;vertical-align:top;}'
-    +'.tot-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9;}'
-    +'.tot-cell{padding:7px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9;}'
-    +'.tot-cell label{font-size:10px;color:#605e5c;font-weight:700;text-transform:uppercase;display:block;}'
-    +'.tot-cell .tv{font-size:14px;font-weight:700;color:#0078d4;}'
-    +'.tot-cell.grand{grid-column:1/-1;border-right:none;}.tot-cell.grand .tv{font-size:17px;color:#d83b01;}'
-    +'.tot-cell.amt .tv{color:#107c10;}'
-    +'.sig-area{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;padding:0 8px;}'
-    +'.sig-box{text-align:center;padding-top:38px;border-top:1.5px solid #c8c6c4;font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;}'
-    +'.footer{background:#0078d4;color:#fff;text-align:center;padding:7px;font-size:10px;margin-top:18px;}'
-    +'</style></head><body>'
-    +'<div class="hdr"><div class="badge">CY<br>CERT</div>'
-    +'<div class="co-info"><div class="co-name">ΚΥΠΡΙΑΚΗ ΕΤΑΙΡΕΙΑ ΠΙΣΤΟΠΟΙΗΣΗΣ (CyCert)</div>'
-    +'<div class="co-addr">Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Ὄροφος, 2014 Λευκωσία | +357 22411435</div></div>'
-    +'<div class="form-title-box"><div class="form-title-main">ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ ΟΔΟΙΠΟΡΙΚΩΝ</div>'
-    +'<div class="form-tag">Travel Expense Payment Sheet</div></div></div>'
-    +'<div class="ref-bar"><div><span>Αρ. Εντύπου:</span>'+ref+'</div><div><span>Περίοδος:</span>'+period+'</div><div><span>Ημ. Υποβολής:</span>'+submitDate+'</div></div>'
-    +'<div style="padding:0 10px;">'
-    +'<div class="sec-hdr">ΣΤΟΙΧΕΙΑ ΥΠΑΛΛΗΛΟΥ</div>'
-    +'<div class="emp-grid">'
-    +'<div class="emp-cell"><label>Ὄνομα</label><div class="val">'+name+'</div></div>'
-    +'<div class="emp-cell"><label>Θέση</label><div class="val">'+pos+'</div></div>'
-    +'<div class="emp-cell"><label>Ὄχημα</label><div class="val">'+veh+'</div></div>'
-    +'<div class="emp-cell" style="border-right:none;"><label>Τμήμα</label><div class="val">'+dept+'</div></div>'
-    +'</div>'
-    +'<div class="sec-hdr" style="margin-top:8px;">ΑΝΑΛΥΣΗ ΤΑΞΙΔΙΩΝ</div>'
-    +'<table><thead><tr><th style="width:26px;">#</th><th style="width:78px;">Ημερομηνία</th><th>Αναχώρηση / Προορισμός</th><th>Σκοπός</th><th style="width:58px;">Parking</th><th style="width:58px;">Km</th></tr></thead>'
-    +'<tbody>'+rowsHtml+'</tbody></table>'
-    +'<div class="sec-hdr" style="margin-top:8px;">ΣΥΝΟΠΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>'
-    +'<div class="tot-box">'
-    +'<div class="tot-cell"><label>Σύνολο Χιλιομέτρων</label><div class="tv">'+totKm+' km</div></div>'
-    +'<div class="tot-cell"><label>Τιμή / Χλμ</label><div class="tv">€'+rate.toFixed(2)+'</div></div>'
-    +'<div class="tot-cell amt"><label>Αμοιβή Οδοιπορικών</label><div class="tv">'+totAmt+'</div></div>'
-    +'<div class="tot-cell"><label>Σύνολο Parking</label><div class="tv">'+totPk+'</div></div>'
-    +'<div class="tot-cell grand"><label>ΓΕΝΙΚΟ ΣΥΝΟΛΟ</label><div class="tv">'+grand+'</div></div>'
-    +'</div>'
-    +rcpHtml
-    +notesHtml
-    +'<div class="sig-area">'
-    +'<div class="sig-box">Υπογραφή Υπαλλήλου</div>'
-    +'<div class="sig-box">Διευθυντής / Προιστάμενος</div>'
-    +'<div class="sig-box">Λογιστήριο</div>'
-    +'</div>'
-    +'</div>'
-    +'<div class="footer">Κυπριακή Εταιρεία Πιστοποίησης | v6</div>'
-    +'</body></html>';
+function updateRowBadge(rowNum) {
+  if (rowNum <= 0) { return; }
+  var cnt = receipts.filter(function (x) { return x.rowNum === rowNum; }).length;
+  var b = document.getElementById('rc-' + rowNum);
+  if (b) { b.textContent = cnt > 0 ? cnt + ' \u03b1\u03c1\u03c7\u03b5\u03af' + (cnt === 1 ? '\u03bf' : '\u03b1') : ''; }
 }
 
-async function generateFormPDF(){
-  var jsPDF=window.jspdf.jsPDF;
-  var htmlStr=buildPrintBody();
-  var iframe=document.createElement('iframe');
-  iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;border:none;visibility:hidden;';
+/* ══════════════════════════════════════════
+   PDF GENERATION via html2canvas + jsPDF
+   Fixes Greek characters (renders browser font)
+   ============================================ */
+function buildPrintBody() {
+  var name = (document.getElementById('f-name') || {}).value || '\u2013';
+  var pos  = (document.getElementById('f-pos') || {}).value  || '\u2013';
+  var veh  = (document.getElementById('f-veh') || {}).value  || '\u2013';
+  var dept = (document.getElementById('f-dept') || {}).value || '\u2013';
+  var period = (document.getElementById('f-period') || {}).value || '\u2013';
+  var ref  = (document.getElementById('f-form-num') || {}).value || '\u2013';
+  var submitDate = (document.getElementById('f-submit-date') || {}).value || '\u2013';
+  var rate = parseFloat((document.getElementById('f-rate') || {}).value) || 0.17;
+  var totKm  = (document.getElementById('s-km')  || {}).textContent || '0';
+  var totAmt = (document.getElementById('s-amt') || {}).textContent || '\u20ac 0.00';
+  var totPk  = (document.getElementById('t-park')|| {}).textContent || '\u20ac 0.00';
+  var grand  = (document.getElementById('s-tot') || {}).textContent || '\u20ac 0.00';
+  var notes  = (document.getElementById('send-notes') || {}).value || '';
+
+  var rowsHtml = '';
+  for (var i = 1; i <= rowCount; i++) {
+    var dv = (document.getElementById('d-'  + i) || {}).value || '';
+    var fv = (document.getElementById('fr-' + i) || {}).value || '';
+    var tv = (document.getElementById('to-' + i) || {}).value || '';
+    var pv = (document.getElementById('pu-' + i) || {}).value || '';
+    var pk = (document.getElementById('pk-' + i) || {}).value || '';
+    var km = (document.getElementById('km-' + i) || {}).value || '';
+    if (!dv && !fv && !tv && !km && !pk) { continue; }
+    var rtEl = document.getElementById('rt-' + i);
+    var rtNote = (rtEl && rtEl.checked) ? ' <span style="color:#6264a7;font-size:10px;">(\u039c/\u0395)</span>' : '';
+    var bg = (rowsHtml.split('<tr').length - 1) % 2 === 0 ? '#ffffff' : '#faf9f8';
+    rowsHtml +=
+      '<tr style="background:' + bg + '">' +
+      '<td style="text-align:center;font-weight:700;color:#0078d4;">' + i + '</td>' +
+      '<td>' + (dv || '\u2013') + '</td>' +
+      '<td><span style="color:#107c10;font-weight:600;">' + (fv || '\u2013') + '</span>' +
+           '<br>\u2192 <span style="color:#d83b01;font-weight:600;">' + (tv || '\u2013') + '</span></td>' +
+      '<td style="font-size:11px;color:#605e5c;">' + (pv || '\u2013') + '</td>' +
+      '<td style="text-align:center;">' + (pk ? '\u20ac' + parseFloat(pk).toFixed(2) : '\u2013') + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:#0078d4;">' + (km ? km + ' km' + rtNote : '\u2013') + '</td>' +
+      '</tr>';
+  }
+  if (!rowsHtml) {
+    rowsHtml = '<tr><td colspan="6" style="text-align:center;color:#999;">' +
+               '\u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03b5\u03b3\u03b3\u03c1\u03b1\u03c6\u03ad\u03c2' +
+               '</td></tr>';
+  }
+
+  var rcpHtml = '';
+  if (receipts.length > 0) {
+    rcpHtml = '<div style="margin-top:14px;background:#f3f2f1;border-left:4px solid #0078d4;padding:8px 12px;">' +
+              '<div style="font-weight:700;font-size:11px;color:#0078d4;margin-bottom:4px;">' +
+              '\ud83d\udcce \u0391\u03c1\u03c7\u03b5\u03af\u03b1 (' + receipts.length + ')</div>';
+    receipts.forEach(function (rc, idx) {
+      rcpHtml += '<div style="font-size:11px;">' + (idx + 1) + '. ' + rc.name +
+                 ' (' + (rc.rowNum > 0 ? '\u0393\u03c1.' + rc.rowNum : '\u0393\u03b5\u03bd.') + ') \u2013 ' +
+                 (rc.size / 1024).toFixed(0) + ' KB</div>';
+    });
+    rcpHtml += '</div>';
+  }
+
+  var notesHtml = notes
+    ? '<div style="margin-top:10px;padding:7px 12px;background:#fff4ce;border-left:3px solid #d04e00;font-size:12px;">' +
+      '\ud83d\udcdd ' + notes + '</div>'
+    : '';
+
+  // Build full HTML document (UTF-8) for iframe rendering
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
+    'body{font-family:Arial,sans-serif;font-size:13px;color:#323130;margin:0;padding:0;width:794px;background:#fff}' +
+    '.hdr{background:#0078d4;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:14px}' +
+    '.badge{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#0078d4;line-height:1.1;text-align:center}' +
+    '.co-info{flex:1}.co-name{font-size:12px;font-weight:700}.co-addr{font-size:10px;opacity:.85;margin-top:2px}' +
+    '.form-title-box{text-align:right}.form-title-main{font-size:15px;font-weight:800}.form-tag{font-size:9px;opacity:.8}' +
+    '.ref-bar{background:#f3f2f1;padding:6px 18px;font-size:11px;display:flex;gap:24px;border-bottom:1px solid #edebe9}' +
+    '.ref-bar span{font-weight:700;color:#0078d4;margin-right:3px}' +
+    '.sec-hdr{background:#0078d4;color:#fff;padding:5px 12px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:12px}' +
+    '.emp-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9}' +
+    '.emp-cell{padding:6px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9}' +
+    '.emp-cell label{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;display:block}' +
+    '.emp-cell .val{font-size:13px;font-weight:600}' +
+    'table{width:100%;border-collapse:collapse;margin-top:3px;font-size:12px}' +
+    'thead tr{background:#0078d4;color:#fff}' +
+    'thead th{padding:6px 7px;text-align:left;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.2)}' +
+    'tbody td{padding:4px 7px;border:1px solid #edebe9;vertical-align:top}' +
+    '.tot-box{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;border:1px solid #edebe9}' +
+    '.tot-cell{padding:7px 12px;border-right:1px solid #edebe9;border-bottom:1px solid #edebe9}' +
+    '.tot-cell label{font-size:10px;color:#605e5c;font-weight:700;text-transform:uppercase;display:block}' +
+    '.tot-cell .tv{font-size:14px;font-weight:700;color:#0078d4}' +
+    '.tot-cell.grand{grid-column:1/-1;border-right:none}.tot-cell.grand .tv{font-size:17px;color:#d83b01}' +
+    '.tot-cell.amt .tv{color:#107c10}' +
+    '.sig-area{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;padding:0 8px}' +
+    '.sig-box{text-align:center;padding-top:38px;border-top:1.5px solid #c8c6c4;font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase}' +
+    '.footer{background:#0078d4;color:#fff;text-align:center;padding:7px;font-size:10px;margin-top:18px}' +
+    '</style></head><body>' +
+    '<div class="hdr">' +
+      '<div class="badge">CY<br>CERT</div>' +
+      '<div class="co-info">' +
+        '<div class="co-name">\u039a\u03a5\u03a0\u03a1\u0399\u0391\u039a\u0397 \u0395\u03a4\u0391\u0399\u03a1\u0395\u0399\u0391 \u03a0\u0399\u03a3\u03a4\u039f\u03a0\u039f\u0399\u0397\u03a3\u0397\u03a3 (CyCert)</div>' +
+        '<div class="co-addr">\u0393\u03c9\u03bd\u03af\u03b1 \u039b\u03b5\u03c9\u03c6. \u039b\u03b5\u03bc\u03b5\u03c3\u03bf\u03cd &amp; \u039a. \u0391\u03bd\u03b1\u03be\u03b1\u03b3\u03cc\u03c1\u03b1 30, 3\u03bf\u03c2, 2014 \u039b\u03b5\u03c5\u03ba\u03c9\u03c3\u03af\u03b1 | +357 22411435</div>' +
+      '</div>' +
+      '<div class="form-title-box">' +
+        '<div class="form-title-main">\u0394\u0395\u039b\u03a4\u0399\u039f \u03a0\u039b\u0397\u03a1\u03a9\u039c\u0397\u03a3 \u039f\u0394\u039f\u0399\u03a0\u039f\u03a1\u0399\u039a\u03a9\u039d</div>' +
+        '<div class="form-tag">Travel Expense Payment Sheet</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ref-bar">' +
+      '<div><span>\u0391\u03c1. \u0395\u03bd\u03c4\u03cd\u03c0\u03bf\u03c5:</span>' + ref + '</div>' +
+      '<div><span>\u03a0\u03b5\u03c1\u03af\u03bf\u03b4\u03bf\u03c2:</span>' + period + '</div>' +
+      '<div><span>\u0397\u03bc. \u03a5\u03c0\u03bf\u03b2\u03bf\u03bb\u03ae\u03c2:</span>' + submitDate + '</div>' +
+    '</div>' +
+    '<div style="padding:0 10px;">' +
+      '<div class="sec-hdr">\u03a3\u03a4\u039f\u0399\u03a7\u0395\u0399\u0391 \u03a5\u03a0\u0391\u039b\u039b\u0397\u039b\u039f\u03a5</div>' +
+      '<div class="emp-grid">' +
+        '<div class="emp-cell"><label>\u038c\u03bd\u03bf\u03bc\u03b1</label><div class="val">' + name + '</div></div>' +
+        '<div class="emp-cell"><label>\u0398\u03ad\u03c3\u03b7</label><div class="val">' + pos  + '</div></div>' +
+        '<div class="emp-cell"><label>\u038c\u03c7\u03b7\u03bc\u03b1</label><div class="val">' + veh  + '</div></div>' +
+        '<div class="emp-cell" style="border-right:none;"><label>\u03a4\u03bc\u03ae\u03bc\u03b1</label><div class="val">' + dept + '</div></div>' +
+      '</div>' +
+      '<div class="sec-hdr" style="margin-top:8px;">\u0391\u039d\u0391\u039b\u03a5\u03a3\u0397 \u03a4\u0391\u039e\u0399\u0394\u0399\u03a9\u039d</div>' +
+      '<table><thead><tr>' +
+        '<th style="width:26px;">#</th>' +
+        '<th style="width:78px;">\u0397\u03bc\u03b5\u03c1\u03bf\u03bc\u03b7\u03bd\u03af\u03b1</th>' +
+        '<th>\u0391\u03bd\u03b1\u03c7\u03ce\u03c1\u03b7\u03c3\u03b7 / \u03a0\u03c1\u03bf\u03bf\u03c1\u03b9\u03c3\u03bc\u03cc\u03c2</th>' +
+        '<th>\u03a3\u03ba\u03bf\u03c0\u03cc\u03c2</th>' +
+        '<th style="width:58px;">Parking</th>' +
+        '<th style="width:58px;">Km</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody></table>' +
+      '<div class="sec-hdr" style="margin-top:8px;">\u03a3\u03a5\u039d\u039f\u03a0\u03a4\u0399\u039a\u0391 \u03a3\u03a4\u039f\u0399\u03a7\u0395\u0399\u0391</div>' +
+      '<div class="tot-box">' +
+        '<div class="tot-cell"><label>\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf \u03a7\u03b9\u03bb\u03b9\u03bf\u03bc\u03ad\u03c4\u03c1\u03c9\u03bd</label><div class="tv">' + totKm + ' km</div></div>' +
+        '<div class="tot-cell"><label>\u03a4\u03b9\u03bc\u03ae / \u03a7\u03bb\u03bc</label><div class="tv">\u20ac' + rate.toFixed(2) + '</div></div>' +
+        '<div class="tot-cell amt"><label>\u0391\u03bc\u03bf\u03b9\u03b2\u03ae \u039f\u03b4\u03bf\u03b9\u03c0\u03bf\u03c1\u03b9\u03ba\u03ce\u03bd</label><div class="tv">' + totAmt + '</div></div>' +
+        '<div class="tot-cell"><label>\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf Parking</label><div class="tv">' + totPk + '</div></div>' +
+        '<div class="tot-cell grand"><label>\u0393\u0395\u039d\u0399\u039a\u039f \u03a3\u03a5\u039d\u039f\u039b\u039f</label><div class="tv">' + grand + '</div></div>' +
+      '</div>' +
+      rcpHtml + notesHtml +
+      '<div class="sig-area">' +
+        '<div class="sig-box">\u03a5\u03c0\u03bf\u03b3\u03c1\u03b1\u03c6\u03ae \u03a5\u03c0\u03b1\u03bb\u03bb\u03ae\u03bb\u03bf\u03c5</div>' +
+        '<div class="sig-box">\u0394\u03b9\u03b5\u03c5\u03b8\u03c5\u03bd\u03c4\u03ae\u03c2 / \u03a0\u03c1\u03bf\u03ca\u03c3\u03c4\u03ac\u03bc\u03b5\u03bd\u03bf\u03c2</div>' +
+        '<div class="sig-box">\u039b\u03bf\u03b3\u03b9\u03c3\u03c4\u03ae\u03c1\u03b9\u03bf</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="footer">\u039a\u03c5\u03c0\u03c1\u03b9\u03b1\u03ba\u03ae \u0395\u03c4\u03b1\u03b9\u03c1\u03b5\u03af\u03b1 \u03a0\u03b9\u03c3\u03c4\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7\u03c2 | CyCert v7</div>' +
+    '</body></html>';
+}
+
+async function generateFormPDF() {
+  if (typeof html2canvas === 'undefined') {
+    throw new Error('html2canvas \u03b4\u03b5\u03bd \u03c6\u03bf\u03c1\u03c4\u03ce\u03b8\u03b7\u03ba\u03b5. \u0395\u03bb\u03ad\u03b3\u03be\u03c4\u03b5 \u03c4\u03b7 \u03c3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7 internet.');
+  }
+  if (typeof window.jspdf === 'undefined') {
+    throw new Error('jsPDF \u03b4\u03b5\u03bd \u03c6\u03bf\u03c1\u03c4\u03ce\u03b8\u03b7\u03ba\u03b5.');
+  }
+  var jsPDF = window.jspdf.jsPDF;
+  var htmlStr = buildPrintBody();
+
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;border:none;visibility:hidden;';
   document.body.appendChild(iframe);
-  return new Promise(function(resolve,reject){
-    iframe.onload=function(){
-      try{
-        var iDoc=iframe.contentDocument||iframe.contentWindow.document;
-        var body=iDoc.body;
-        setTimeout(function(){
-          var fullH=Math.max(body.scrollHeight,body.offsetHeight,iDoc.documentElement.scrollHeight);
-          iframe.style.height=fullH+'px';
-          setTimeout(function(){
-            html2canvas(body,{
-              scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
-              width:794,height:fullH,scrollX:0,scrollY:0,windowWidth:794
-            }).then(function(canvas){
-              document.body.removeChild(iframe);
-              var A4_W=210,A4_H=297;
-              var pxW=canvas.width,pxH=canvas.height;
-              var mmH=Math.round((pxH/pxW)*A4_W);
-              var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-              var pagesMm=A4_H-10;
-              var totalPages=Math.ceil(mmH/pagesMm);
-              for(var p=0;p<totalPages;p++){
-                if(p>0)doc.addPage();
-                var srcY=Math.round((p*pagesMm/mmH)*pxH);
-                var srcH=Math.min(Math.round((pagesMm/mmH)*pxH),pxH-srcY);
-                if(srcH<=0)break;
-                var sliceCanvas=document.createElement('canvas');
-                sliceCanvas.width=pxW;sliceCanvas.height=srcH;
-                var ctx=sliceCanvas.getContext('2d');
-                ctx.drawImage(canvas,0,srcY,pxW,srcH,0,0,pxW,srcH);
-                var sliceData=sliceCanvas.toDataURL('image/jpeg',0.92);
-                doc.addImage(sliceData,'JPEG',0,5,A4_W,pagesMm*(srcH/Math.round((pagesMm/mmH)*pxH)));
+
+  return new Promise(function (resolve, reject) {
+    iframe.onload = function () {
+      try {
+        var iDoc = iframe.contentDocument || iframe.contentWindow.document;
+        var body = iDoc.body;
+        // Wait for fonts/layout to settle
+        setTimeout(function () {
+          var fullH = Math.max(body.scrollHeight, body.offsetHeight,
+                               iDoc.documentElement ? iDoc.documentElement.scrollHeight : 0);
+          if (fullH < 100) { fullH = 1123; } // A4 fallback
+          iframe.style.height = fullH + 'px';
+          setTimeout(function () {
+            html2canvas(body, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              width: 794,
+              height: fullH,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: 794
+            }).then(function (canvas) {
+              try { document.body.removeChild(iframe); } catch (e) {}
+              var A4_W = 210, A4_H = 297;
+              var pxW = canvas.width, pxH = canvas.height;
+              var mmH = Math.round((pxH / pxW) * A4_W);
+              var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+              var pagesMm = A4_H - 10;
+              var totalPages = Math.ceil(mmH / pagesMm);
+              for (var p = 0; p < totalPages; p++) {
+                if (p > 0) { doc.addPage(); }
+                var srcY = Math.round((p * pagesMm / mmH) * pxH);
+                var srcH = Math.min(Math.round((pagesMm / mmH) * pxH), pxH - srcY);
+                if (srcH <= 0) { break; }
+                var sliceCanvas = document.createElement('canvas');
+                sliceCanvas.width = pxW;
+                sliceCanvas.height = srcH;
+                var ctx = sliceCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, srcY, pxW, srcH, 0, 0, pxW, srcH);
+                var sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+                var sliceMmH = pagesMm * (srcH / Math.round((pagesMm / mmH) * pxH));
+                doc.addImage(sliceData, 'JPEG', 0, 5, A4_W, sliceMmH);
               }
               resolve(doc);
-            }).catch(function(err){document.body.removeChild(iframe);reject(err);});
-          },400);
-        },300);
-      }catch(err){try{document.body.removeChild(iframe);}catch(e){}reject(err);}
+            }).catch(function (err) {
+              try { document.body.removeChild(iframe); } catch (e) {}
+              reject(err);
+            });
+          }, 500);
+        }, 300);
+      } catch (err) {
+        try { document.body.removeChild(iframe); } catch (e) {}
+        reject(err);
+      }
     };
-    iframe.srcdoc=htmlStr;
+    iframe.srcdoc = htmlStr;
   });
 }
 
-/* ── ZIP for fallback ── */
-async function createZip(pdfDoc){
-  var zip=new JSZip();
-  var name=document.getElementById('f-name').value.replace(/\s+/g,'_')||'employee';
-  var period=document.getElementById('f-period').value||'period';
-  var pdfFilename='form_odoeporika_'+name+'_'+period+'.pdf';
-  zip.file(pdfFilename,pdfDoc.output('arraybuffer'));
-  if(receipts.length>0){
-    var rcptFolder=zip.folder('receipts');
-    receipts.forEach(function(r){
-      var b64=r.dataURL.split(',')[1];
-      rcptFolder.file(r.name,b64,{base64:true});
+/* ── ZIP helper ── */
+async function createZip(pdfDoc) {
+  var zip = new JSZip();
+  var name = ((document.getElementById('f-name') || {}).value || 'employee').replace(/\s+/g, '_');
+  var period = (document.getElementById('f-period') || {}).value || 'period';
+  var pdfFilename = 'form_odoeporika_' + name + '_' + period + '.pdf';
+  zip.file(pdfFilename, pdfDoc.output('arraybuffer'));
+  if (receipts.length > 0) {
+    var rcptFolder = zip.folder('receipts');
+    receipts.forEach(function (rc) {
+      var b64 = rc.dataURL.split(',')[1];
+      rcptFolder.file(rc.name, b64, { base64: true });
     });
   }
-  return{zip:zip,pdfFilename:pdfFilename};
+  return { zip: zip, pdfFilename: pdfFilename };
 }
 
-/* ── EMAIL BODY TEXT ── */
-function buildEmailBody(){
-  var name=document.getElementById('f-name').value||'–';
-  var pos=document.getElementById('f-pos').value||'–';
-  var veh=document.getElementById('f-veh').value||'–';
-  var dept=document.getElementById('f-dept').value||'–';
-  var period=document.getElementById('f-period').value||'–';
-  var rate=document.getElementById('f-rate').value||'0.17';
-  var ref=document.getElementById('f-form-num').value||'–';
-  var notes=document.getElementById('send-notes').value||'';
-  var totKm=document.getElementById('s-km').textContent||'0';
-  var totAmt=document.getElementById('s-amt').textContent||'EUR 0.00';
-  var totPk=document.getElementById('t-park').textContent||'EUR 0.00';
-  var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
-  var lines=[];
-  lines.push('ΔΕΛΤΙΟ ΠΛΗΡΩΜΗΣ ΟΔΟΙΠΟΡΙΚΩΝ');
-  lines.push('Κυπριακή Εταιρεία Πιστοποίησης');
-  lines.push('═══════════════════════════════════');
-  lines.push('Αρ. Εντύπου: '+ref+'  |  Περίοδος: '+period+'  |  Ημ. Υποβολής: '+document.getElementById('f-submit-date').value);
-  lines.push('');
-  lines.push('ΥΠΑΛΛΗΛΟΣ: '+name+'  |  ΘΕΣΗ: '+pos+'  |  ΤΜΗΜΑ: '+dept);
-  lines.push('ΟΧΗΜΑ: '+veh);
-  lines.push('');
-  lines.push('ΑΝΑΛΥΣΗ ΤΑΞΙΔΙΩΝ');
-  lines.push('───────────────────────────────────');
-  for(var i=1;i<=rowCount;i++){
-    var dv=(document.getElementById('d-'+i)||{value:''}).value;
-    var fv=(document.getElementById('fr-'+i)||{value:''}).value;
-    var tv=(document.getElementById('to-'+i)||{value:''}).value;
-    var pu=(document.getElementById('pu-'+i)||{value:''}).value;
-    var pk=(document.getElementById('pk-'+i)||{value:''}).value;
-    var km=(document.getElementById('km-'+i)||{value:''}).value;
-    if(!dv&&!fv&&!tv&&!km&&!pk)continue;
-    var route=fv&&tv?fv+' -> '+tv:(fv||tv||'–');
-    lines.push(i+'. ['+( dv||'–')+'] '+route+(pu?' | '+pu:'')+(pk?' | Parking:EUR'+parseFloat(pk).toFixed(2):'')+(km?' | '+km+' km':''));
+/* ── Email body text ── */
+function buildEmailBody() {
+  var name   = (document.getElementById('f-name')        || {}).value || '\u2013';
+  var pos    = (document.getElementById('f-pos')         || {}).value || '\u2013';
+  var veh    = (document.getElementById('f-veh')         || {}).value || '\u2013';
+  var dept   = (document.getElementById('f-dept')        || {}).value || '\u2013';
+  var period = (document.getElementById('f-period')      || {}).value || '\u2013';
+  var rate   = (document.getElementById('f-rate')        || {}).value || '0.17';
+  var ref    = (document.getElementById('f-form-num')    || {}).value || '\u2013';
+  var notes  = (document.getElementById('send-notes')    || {}).value || '';
+  var subDate= (document.getElementById('f-submit-date') || {}).value || '\u2013';
+  var totKm  = (document.getElementById('s-km')  || {}).textContent || '0';
+  var totAmt = (document.getElementById('s-amt') || {}).textContent || '\u20ac 0.00';
+  var totPk  = (document.getElementById('t-park')|| {}).textContent || '\u20ac 0.00';
+  var grand  = (document.getElementById('s-tot') || {}).textContent || '\u20ac 0.00';
+
+  var lines = [
+    '\u0394\u0395\u039b\u03a4\u0399\u039f \u03a0\u039b\u0397\u03a1\u03a9\u039c\u0397\u03a3 \u039f\u0394\u039f\u0399\u03a0\u039f\u03a1\u0399\u039a\u03a9\u039d',
+    '\u039a\u03c5\u03c0\u03c1\u03b9\u03b1\u03ba\u03ae \u0395\u03c4\u03b1\u03b9\u03c1\u03b5\u03af\u03b1 \u03a0\u03b9\u03c3\u03c4\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7\u03c2',
+    '\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550',
+    '\u0391\u03c1. \u0395\u03bd\u03c4\u03cd\u03c0\u03bf\u03c5: ' + ref + '  |  \u03a0\u03b5\u03c1\u03af\u03bf\u03b4\u03bf\u03c2: ' + period + '  |  \u0397\u03bc. \u03a5\u03c0\u03bf\u03b2\u03bf\u03bb\u03ae\u03c2: ' + subDate,
+    '',
+    '\u03a5\u03a0\u0391\u039b\u039b\u0397\u039b\u039f\u03a3: ' + name + '  |  \u0398\u0395\u03a3\u0397: ' + pos + '  |  \u03a4\u039c\u0397\u039c\u0391: ' + dept,
+    '\u039f\u03a7\u0397\u039c\u0391: ' + veh,
+    '',
+    '\u0391\u039d\u0391\u039b\u03a5\u03a3\u0397 \u03a4\u0391\u039e\u0399\u0394\u0399\u03a9\u039d',
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500'
+  ];
+
+  for (var i = 1; i <= rowCount; i++) {
+    var dv = (document.getElementById('d-'  + i) || {}).value || '';
+    var fv = (document.getElementById('fr-' + i) || {}).value || '';
+    var tv = (document.getElementById('to-' + i) || {}).value || '';
+    var pu = (document.getElementById('pu-' + i) || {}).value || '';
+    var pk = (document.getElementById('pk-' + i) || {}).value || '';
+    var km = (document.getElementById('km-' + i) || {}).value || '';
+    if (!dv && !fv && !tv && !km && !pk) { continue; }
+    var route = (fv && tv) ? fv + ' -> ' + tv : (fv || tv || '\u2013');
+    lines.push(i + '. [' + (dv || '\u2013') + '] ' + route +
+      (pu ? ' | ' + pu : '') +
+      (pk ? ' | Parking:\u20ac' + parseFloat(pk).toFixed(2) : '') +
+      (km ? ' | ' + km + ' km' : ''));
   }
-  lines.push('');
-  lines.push('ΣΥΝΟΛΑ');
-  lines.push('───────────────────────────────────');
-  lines.push('Σύνολο Χλμ:     '+totKm+' km  x  EUR'+rate+'/km  =  '+totAmt);
-  lines.push('Σύνολο Parking: '+totPk);
-  lines.push('ΓΕΝΙΚΟ ΣΥΝΟΛΟ:  '+grand);
-  if(receipts.length>0){
-    lines.push('');
-    lines.push('ΕΠΙΣΥΝΑΠΤΟΜΕΝΑ ΑΡΧΕΙΑ ('+receipts.length+'):');
-    receipts.forEach(function(r,idx){lines.push((idx+1)+'. '+r.name+' ('+(r.rowNum>0?'Γρ.'+r.rowNum:'Γεν.')+')');});
+
+  lines.push('', '\u03a3\u03a5\u039d\u039f\u039b\u0391',
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500',
+    '\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf \u03a7\u03bb\u03bc: ' + totKm + ' km  x  \u20ac' + rate + '/km  =  ' + totAmt,
+    '\u03a3\u03cd\u03bd\u03bf\u03bb\u03bf Parking: ' + totPk,
+    '\u0393\u0395\u039d\u0399\u039a\u039f \u03a3\u03a5\u039d\u039f\u039b\u039f: ' + grand);
+
+  if (receipts.length > 0) {
+    lines.push('', '\u0395\u03a0\u0399\u03a3\u03a5\u039d\u0391\u03a0\u03a4\u039f\u039c\u0395\u039d\u0391 \u0391\u03a1\u03a7\u0395\u0399\u0391 (' + receipts.length + '):');
+    receipts.forEach(function (rc, idx) {
+      lines.push((idx + 1) + '. ' + rc.name + ' (' + (rc.rowNum > 0 ? '\u0393\u03c1.' + rc.rowNum : '\u0393\u03b5\u03bd.') + ')');
+    });
   }
-  if(notes){lines.push('');lines.push('ΣΧΟΛΙΑ: '+notes);}
-  lines.push('');
-  lines.push('───────────────────────────────────');
-  lines.push('Αυτόματη δημιουργία από τη φόρμα Οδοιπορικών CyCert v5.');
+  if (notes) { lines.push('', '\u03a3\u03a7\u039f\u039b\u0399\u0391: ' + notes); }
+  lines.push('', '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500',
+    '\u0391\u03c5\u03c4\u03cc\u03bc\u03b1\u03c4\u03b7 \u03b4\u03b7\u03bc\u03b9\u03bf\u03c5\u03c1\u03b3\u03af\u03b1 \u03b1\u03c0\u03cc \u03c6\u03cc\u03c1\u03bc\u03b1 \u039f\u03b4\u03bf\u03b9\u03c0\u03bf\u03c1\u03b9\u03ba\u03ce\u03bd CyCert v7.');
   return lines.join('\n');
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    MAIN SEND WORKFLOW
-═══════════════════════════════════════════ */
-async function executeSendWorkflow(){
-  // Validate
-  var name=document.getElementById('f-name').value.trim();
-  var pos=document.getElementById('f-pos').value.trim();
-  var veh=document.getElementById('f-veh').value.trim();
-  if(!name||!pos||!veh){toast('⚠️ Συμπληρώστε: Όνομα, Θέση, Όχημα','bad');return;}
-
-  if(sendMethod==='m365'){
-    if(!M365_CFG.configured){
-      toast('⚠️ Ρυθμίστε πρώτα το Microsoft 365 (⚙️ Ρυθμίσεις)','bad');
-      openConfig();return;
+   ============================================ */
+async function executeSendWorkflow() {
+  var name = ((document.getElementById('f-name') || {}).value || '').trim();
+  var pos  = ((document.getElementById('f-pos')  || {}).value || '').trim();
+  var veh  = ((document.getElementById('f-veh')  || {}).value || '').trim();
+  if (!name || !pos || !veh) {
+    toast('\u26a0\ufe0f \u03a3\u03c5\u03bc\u03c0\u03bb\u03b7\u03c1\u03ce\u03c3\u03c4\u03b5: \u038c\u03bd\u03bf\u03bc\u03b1, \u0398\u03ad\u03c3\u03b7, \u038c\u03c7\u03b7\u03bc\u03b1', 'bad');
+    return;
+  }
+  if (sendMethod === 'm365') {
+    if (!M365_CFG.configured) {
+      toast('\u26a0\ufe0f \u03a1\u03c5\u03b8\u03bc\u03af\u03c3\u03c4\u03b5 \u03c0\u03c1\u03ce\u03c4\u03b1 \u03c4\u03bf Microsoft 365', 'bad');
+      openConfig();
+      return;
     }
     await sendWithM365();
-  }else{
+  } else {
     await sendWithEmailClient();
   }
 }
 
 /* ── M365 SEND ── */
-async function sendWithM365(){
-  showSendModal('Microsoft 365 – Αποστολή με συνημμένα');
-  setStep(1,'active');setStep(2,'pending');setStep(3,'pending');setStep(4,'pending');
-  document.getElementById('success-box').style.display='none';
-  document.getElementById('fallback-box').style.display='none';
-  document.getElementById('file-checklist').style.display='none';
-  document.getElementById('btn-close-modal').style.display='none';
-  document.getElementById('btn-reopen-outlook').style.display='none';
+async function sendWithM365() {
+  showSendModal('Microsoft 365 \u2013 \u0391\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae \u03bc\u03b5 \u03c3\u03c5\u03bd\u03b7\u03bc\u03bc\u03ad\u03bd\u03b1');
+  resetSteps();
+  setStep(1, 'active');
 
-  try{
+  try {
     // Step 1: Generate PDF
     await sleep(200);
-    var pdfDoc=await generateFormPDF();
-    var pdfB64=pdfDoc.output('datauristring').split(',')[1];
-    var name=document.getElementById('f-name').value.replace(/\s+/g,'_')||'employee';
-    var period=document.getElementById('f-period').value||'period';
-    var pdfFilename='form_odoeporika_'+name+'_'+period+'.pdf';
-    setStep(1,'done','✅');
+    var pdfDoc = await generateFormPDF();
+    var pdfB64 = pdfDoc.output('datauristring').split(',')[1];
+    var empName = ((document.getElementById('f-name') || {}).value || 'employee').replace(/\s+/g, '_');
+    var period  = (document.getElementById('f-period') || {}).value || 'period';
+    var pdfFilename = 'form_odoeporika_' + empName + '_' + period + '.pdf';
+    setStep(1, 'done', '\u2705');
 
     // Step 2: Prepare attachments
-    setStep(2,'active');
+    setStep(2, 'active');
     await sleep(150);
-    var attachments=[{
-      '@odata.type':'#microsoft.graph.fileAttachment',
-      name:pdfFilename,
-      contentType:'application/pdf',
-      contentBytes:pdfB64
+    var attachments = [{
+      '@odata.type': '#microsoft.graph.fileAttachment',
+      name: pdfFilename,
+      contentType: 'application/pdf',
+      contentBytes: pdfB64
     }];
-    receipts.forEach(function(r){
-      var b64=r.dataURL.split(',')[1];
-      var ct=r.type||'application/octet-stream';
-      attachments.push({'@odata.type':'#microsoft.graph.fileAttachment',name:r.name,contentType:ct,contentBytes:b64});
+    receipts.forEach(function (rc) {
+      attachments.push({
+        '@odata.type': '#microsoft.graph.fileAttachment',
+        name: rc.name,
+        contentType: rc.type || 'application/octet-stream',
+        contentBytes: rc.dataURL.split(',')[1]
+      });
     });
-    // Show file checklist
     showFileChecklist(pdfFilename);
-    setStep(2,'done','✅');
+    setStep(2, 'done', '\u2705');
 
     // Step 3: Authenticate
-    setStep(3,'active');
-    if(!initMSAL()){throw new Error('MSAL configuration error. Please check settings.');}
-    var token=await getAccessToken();
-    setStep(3,'done','✅');
+    setStep(3, 'active');
+    if (!initMSAL()) { throw new Error('MSAL configuration error.'); }
+    var token = await getAccessToken();
+    setStep(3, 'done', '\u2705');
 
     // Step 4: Send via Graph API
-    setStep(4,'active');
-    var toAddr=document.getElementById('send-to').value.trim()||'accounting@cycert.org.cy';
-    var ccAddr=document.getElementById('send-cc').value.trim();
-    var empName=document.getElementById('f-name').value||'–';
-    var ref=document.getElementById('f-form-num').value||'';
-    var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
-    var subj='Οδοιπορικά – '+empName+' – '+period+' – '+ref+' – Σύνολο: '+grand;
-    var body=buildEmailBody();
+    setStep(4, 'active');
+    var toAddr  = ((document.getElementById('send-to')  || {}).value || 'accounting@cycert.org.cy').trim();
+    var ccAddr  = ((document.getElementById('send-cc')  || {}).value || '').trim();
+    var dispName = (document.getElementById('f-name') || {}).value || '\u2013';
+    var ref      = (document.getElementById('f-form-num') || {}).value || '';
+    var grand    = (document.getElementById('s-tot') || {}).textContent || '\u20ac 0.00';
+    var subj = '\u039f\u03b4\u03bf\u03b9\u03c0\u03bf\u03c1\u03b9\u03ba\u03ac \u2013 ' + dispName + ' \u2013 ' + period + ' \u2013 ' + ref + ' \u2013 \u03a3\u03cd\u03bd\u03bf\u03bb\u03bf: ' + grand;
 
-    var msgPayload={
-      message:{
-        subject:subj,
-        body:{contentType:'Text',content:body},
-        toRecipients:[{emailAddress:{address:toAddr}}],
-        attachments:attachments
+    var msgPayload = {
+      message: {
+        subject: subj,
+        body: { contentType: 'Text', content: buildEmailBody() },
+        toRecipients: [{ emailAddress: { address: toAddr } }],
+        attachments: attachments
       },
-      saveToSentItems:true
+      saveToSentItems: true
     };
-    if(ccAddr){msgPayload.message.ccRecipients=[{emailAddress:{address:ccAddr}}];}
+    if (ccAddr) { msgPayload.message.ccRecipients = [{ emailAddress: { address: ccAddr } }]; }
 
-    var resp=await fetch('https://graph.microsoft.com/v1.0/me/sendMail',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(msgPayload)
+    var resp = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(msgPayload)
     });
 
-    if(!resp.ok){
-      var errText=await resp.text();
-      throw new Error('Graph API error '+resp.status+': '+errText);
+    if (!resp.ok) {
+      var errText = await resp.text();
+      throw new Error('Graph API ' + resp.status + ': ' + errText);
     }
-    setStep(4,'done','✅');
+    setStep(4, 'done', '\u2705');
 
-    // Success
-    document.getElementById('success-box').style.display='block';
-    document.getElementById('success-detail').innerHTML=
-      'Email στάλθηκε στο <strong>'+toAddr+'</strong> με '+attachments.length+' συνημμένα<br>'+
-      '📄 '+pdfFilename+(receipts.length>0?' + '+receipts.length+' αποδείξεις':'');
-    document.getElementById('btn-close-modal').style.display='inline-flex';
+    var successBox = document.getElementById('success-box');
+    if (successBox) { successBox.style.display = 'block'; }
+    var successDetail = document.getElementById('success-detail');
+    if (successDetail) {
+      successDetail.innerHTML = 'Email \u03c3\u03c4\u03ac\u03bb\u03b8\u03b7\u03ba\u03b5 \u03c3\u03c4\u03bf <strong>' + toAddr + '</strong> \u03bc\u03b5 ' +
+        attachments.length + ' \u03c3\u03c5\u03bd\u03b7\u03bc\u03bc\u03ad\u03bd\u03b1';
+    }
+    var closeBtn = document.getElementById('btn-close-modal');
+    if (closeBtn) { closeBtn.style.display = 'inline-flex'; }
 
-    var b=document.getElementById('banner');
-    b.className='banner ok';
-    b.innerHTML='✅ <span>Email εστάλη στο <strong>'+toAddr+'</strong> με PDF + αποδείξεις ως συνημμένα!</span>';
-    toast('📤 Email εστάλη επιτυχώς!','ok');
+    var b = document.getElementById('banner');
+    if (b) { b.className = 'banner ok'; b.innerHTML = '\u2705 <span>Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03c3\u03c4\u03bf <strong>' + toAddr + '</strong></span>'; }
+    toast('\ud83d\udce4 Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03ce\u03c2!', 'ok');
 
-  }catch(err){
-    console.error('M365 send error:',err);
-    ['step-1','step-2','step-3','step-4'].forEach(function(id){
-      if(document.getElementById(id).classList.contains('active'))setStep(id.replace('step-',''),'error','❌');
+  } catch (err) {
+    console.error('[CyCert] M365 error:', err);
+    // Mark active step as error
+    ['step-1','step-2','step-3','step-4'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && el.classList.contains('active')) { setStep(id.replace('step-', ''), 'error', '\u274c'); }
     });
-    var errMsg=err.message||'Άγνωστο σφάλμα';
-    // Show user-friendly error
-    var detail='';
-    if(errMsg.indexOf('popup')>-1||errMsg.indexOf('block')>-1){
-      detail='⚠️ Το popup για σύνδεση Microsoft μπλοκαρίστηκε. Επιτρέψτε popups για αυτή τη σελίδα.';
-    }else if(errMsg.indexOf('401')>-1||errMsg.indexOf('403')>-1){
-      detail='⚠️ Σφάλμα εξουσιοδότησης. Ελέγξτε τα δικαιώματα Azure AD (Mail.Send).';
-    }else{
-      detail='❌ '+errMsg;
-    }
-    toast(detail,'bad');
-    document.getElementById('btn-close-modal').style.display='inline-flex';
+    toast('\u274c ' + (err.message || '\u0386\u03b3\u03bd\u03c9\u03c3\u03c4\u03bf \u03c3\u03c6\u03ac\u03bb\u03bc\u03b1'), 'bad');
+    var closeBtn = document.getElementById('btn-close-modal');
+    if (closeBtn) { closeBtn.style.display = 'inline-flex'; }
   }
 }
 
 /* ── EMAIL CLIENT FALLBACK ── */
-async function sendWithEmailClient(){
-  showSendModal('Email Client – Λήψη ZIP + Άνοιγμα Email');
-  // Update step labels for fallback
-  document.getElementById('step-3-label').textContent='Δημιουργία ZIP αρχείου…';
-  document.getElementById('step-4-label').textContent='Άνοιγμα email client…';
-  setStep(1,'active');setStep(2,'pending');setStep(3,'pending');setStep(4,'pending');
-  document.getElementById('success-box').style.display='none';
-  document.getElementById('fallback-box').style.display='none';
-  document.getElementById('file-checklist').style.display='none';
-  document.getElementById('btn-close-modal').style.display='none';
-  document.getElementById('btn-reopen-outlook').style.display='none';
+async function sendWithEmailClient() {
+  showSendModal('Email Client \u2013 \u039b\u03ae\u03c8\u03b7 ZIP + \u0386\u03bd\u03bf\u03b9\u03b3\u03bc\u03b1 Email');
+  var lbl3 = document.getElementById('step-3-lbl');
+  var lbl4 = document.getElementById('step-4-lbl');
+  if (lbl3) { lbl3.textContent = '\u0394\u03b7\u03bc\u03b9\u03bf\u03c5\u03c1\u03b3\u03af\u03b1 ZIP \u03b1\u03c1\u03c7\u03b5\u03af\u03bf\u03c5\u2026'; }
+  if (lbl4) { lbl4.textContent = '\u0386\u03bd\u03bf\u03b9\u03b3\u03bc\u03b1 email client\u2026'; }
+  resetSteps();
+  setStep(1, 'active');
 
-  try{
-    // Step 1: Generate PDF
+  try {
     await sleep(200);
-    var pdfDoc=await generateFormPDF();
-    setStep(1,'done','✅');
+    var pdfDoc = await generateFormPDF();
+    setStep(1, 'done', '\u2705');
 
-    // Step 2: Prepare files
-    setStep(2,'active');
+    setStep(2, 'active');
     await sleep(150);
-    showFileChecklist((document.getElementById('f-name').value.replace(/\s+/g,'_')||'employee')+'_form.pdf');
-    setStep(2,'done','✅');
+    var empName = ((document.getElementById('f-name') || {}).value || 'employee').replace(/\s+/g, '_');
+    var period  = (document.getElementById('f-period') || {}).value || 'period';
+    showFileChecklist(empName + '_form.pdf');
+    setStep(2, 'done', '\u2705');
 
-    // Step 3: Create ZIP
-    setStep(3,'active');
+    setStep(3, 'active');
     await sleep(200);
-    var zipResult=await createZip(pdfDoc);
-    var zipName='CyCert_Odoeporika_'+(document.getElementById('f-name').value.replace(/\s+/g,'_')||'form')+'_'+(document.getElementById('f-period').value||'period')+'.zip';
-    var zipContent=await zipResult.zip.generateAsync({type:'blob'});
-    downloadBlob(zipContent,'application/zip',zipName);
-    setStep(3,'done','✅');
+    var zipResult  = await createZip(pdfDoc);
+    var zipName    = 'CyCert_Odoeporika_' + empName + '_' + period + '.zip';
+    var zipContent = await zipResult.zip.generateAsync({ type: 'blob' });
+    downloadBlob(zipContent, 'application/zip', zipName);
+    setStep(3, 'done', '\u2705');
 
-    // Step 4: Open email client
-    setStep(4,'active');
+    setStep(4, 'active');
     await sleep(300);
-    var toAddr=document.getElementById('send-to').value.trim()||'accounting@cycert.org.cy';
-    var ccAddr=document.getElementById('send-cc').value.trim();
-    var empName=document.getElementById('f-name').value||'–';
-    var period=document.getElementById('f-period').value||'–';
-    var ref=document.getElementById('f-form-num').value||'';
-    var grand=document.getElementById('s-tot').textContent||'EUR 0.00';
-    var subj='Οδοιπορικά – '+empName+' – '+period+' – '+ref+' – Σύνολο: '+grand;
-    var body=buildEmailBody();
-    var mailto='mailto:'+encodeURIComponent(toAddr)+
-      '?subject='+encodeURIComponent(subj)+
-      (ccAddr?'&cc='+encodeURIComponent(ccAddr):'')+
-      '&body='+encodeURIComponent(body);
-    lastMailtoStr=mailto;
-    window.location.href=mailto;
-    setStep(4,'done','✅');
+    var toAddr = ((document.getElementById('send-to')  || {}).value || 'accounting@cycert.org.cy').trim();
+    var ccAddr = ((document.getElementById('send-cc')  || {}).value || '').trim();
+    var dispName = (document.getElementById('f-name')   || {}).value || '\u2013';
+    var ref      = (document.getElementById('f-form-num') || {}).value || '';
+    var grand    = (document.getElementById('s-tot') || {}).textContent || '\u20ac 0.00';
+    var subj = '\u039f\u03b4\u03bf\u03b9\u03c0\u03bf\u03c1\u03b9\u03ba\u03ac \u2013 ' + dispName + ' \u2013 ' + period + ' \u2013 ' + ref + ' \u2013 \u03a3\u03cd\u03bd\u03bf\u03bb\u03bf: ' + grand;
+    var mailto = 'mailto:' + encodeURIComponent(toAddr) +
+      '?subject=' + encodeURIComponent(subj) +
+      (ccAddr ? '&cc=' + encodeURIComponent(ccAddr) : '') +
+      '&body=' + encodeURIComponent(buildEmailBody());
+    lastMailtoStr = mailto;
+    window.location.href = mailto;
+    setStep(4, 'done', '\u2705');
 
-    // Show fallback instructions
-    document.getElementById('fallback-box').style.display='block';
-    document.getElementById('btn-close-modal').style.display='inline-flex';
-    document.getElementById('btn-reopen-outlook').style.display='inline-flex';
+    var fb = document.getElementById('fallback-box');
+    if (fb) { fb.style.display = 'block'; }
+    var closeBtn = document.getElementById('btn-close-modal');
+    var reopenBtn = document.getElementById('btn-reopen-outlook');
+    if (closeBtn) { closeBtn.style.display = 'inline-flex'; }
+    if (reopenBtn) { reopenBtn.style.display = 'inline-flex'; }
 
-    var b=document.getElementById('banner');
-    b.className='banner warning';
-    b.innerHTML='📥 <span>ZIP κατεβήκε. Ανοίξτε τον email client, επισυνάψτε <strong>'+zipName+'</strong> και πατήστε Send.</span>';
-    toast('📥 ZIP κατεβήκε. Επισυνάψτε στο email client.','info');
+    var b = document.getElementById('banner');
+    if (b) {
+      b.className = 'banner warning';
+      b.innerHTML = '\ud83d\udce5 <span>ZIP \u03ba\u03b1\u03c4\u03b5\u03b2\u03ae\u03ba\u03b5. \u0391\u03bd\u03bf\u03af\u03be\u03c4\u03b5 \u03c4\u03bf\u03bd email client, \u03b5\u03c0\u03b9\u03c3\u03c5\u03bd\u03ac\u03c8\u03c4\u03b5 <strong>' + zipName + '</strong> \u03ba\u03b1\u03b9 \u03c3\u03c4\u03b5\u03af\u03bb\u03c4\u03b5.</span>';
+    }
+    toast('\ud83d\udce5 ZIP \u03ba\u03b1\u03c4\u03b5\u03b2\u03ae\u03ba\u03b5', 'info');
 
-  }catch(err){
-    console.error('Email client error:',err);
-    toast('❌ '+err.message,'bad');
-    document.getElementById('btn-close-modal').style.display='inline-flex';
+  } catch (err) {
+    console.error('[CyCert] Email client error:', err);
+    toast('\u274c ' + (err.message || '\u0386\u03b3\u03bd\u03c9\u03c3\u03c4\u03bf \u03c3\u03c6\u03ac\u03bb\u03bc\u03b1'), 'bad');
+    var closeBtn = document.getElementById('btn-close-modal');
+    if (closeBtn) { closeBtn.style.display = 'inline-flex'; }
   }
 }
 
-/* ── FILE CHECKLIST ── */
-function showFileChecklist(pdfFilename){
-  var items=document.getElementById('file-list-items');
-  items.innerHTML='';
-  var fi1=document.createElement('div');fi1.className='file-item';
-  fi1.innerHTML='<span class="fi-icon">📄</span><span class="fi-name">'+pdfFilename+'</span><span class="fi-size">PDF</span>';
+/* ── SEND MODAL HELPERS ── */
+function showSendModal(title) {
+  var h = document.getElementById('snd-head-title');
+  if (h) { h.textContent = title; }
+  var successBox = document.getElementById('success-box');
+  var fallbackBox = document.getElementById('fallback-box');
+  var checklist = document.getElementById('file-checklist');
+  var closeBtn = document.getElementById('btn-close-modal');
+  var reopenBtn = document.getElementById('btn-reopen-outlook');
+  if (successBox) { successBox.style.display = 'none'; }
+  if (fallbackBox) { fallbackBox.style.display = 'none'; }
+  if (checklist) { checklist.style.display = 'none'; }
+  if (closeBtn) { closeBtn.style.display = 'none'; }
+  if (reopenBtn) { reopenBtn.style.display = 'none'; }
+  var ov = document.getElementById('snd-overlay');
+  if (ov) { ov.classList.add('on'); }
+}
+function closeSendModal() {
+  var ov = document.getElementById('snd-overlay');
+  if (ov) { ov.classList.remove('on'); }
+}
+function reOpenOutlook() {
+  if (lastMailtoStr) { window.location.href = lastMailtoStr; }
+  else { toast('\u26a0\ufe0f \u0394\u03b5\u03bd \u03b2\u03c1\u03ad\u03b8\u03b7\u03ba\u03b5 \u03c3\u03cd\u03bd\u03b4\u03b5\u03c3\u03bc\u03bf\u03c2', 'bad'); }
+}
+function resetSteps() {
+  for (var i = 1; i <= 4; i++) {
+    var el = document.getElementById('step-' + i);
+    if (el) { el.className = 'snd-step pending'; }
+    var icon = el ? el.querySelector('.step-icon') : null;
+    if (icon) {
+      var icons = ['\ud83d\udcc4', '\ud83d\udcd4', '\ud83d\udd10', '\ud83d\udce7'];
+      icon.innerHTML = icons[i - 1] || '';
+    }
+  }
+}
+function setStep(num, state, icon) {
+  var el = document.getElementById('step-' + num);
+  if (!el) { return; }
+  el.className = 'snd-step ' + state;
+  var iconEl = el.querySelector('.step-icon');
+  if (!iconEl) { return; }
+  if (icon) {
+    iconEl.textContent = icon;
+  } else if (state === 'active') {
+    iconEl.innerHTML = '<div class="ring"><div></div><div></div><div></div><div></div></div>';
+  }
+}
+function showFileChecklist(pdfFilename) {
+  var items = document.getElementById('file-list-items');
+  var checklist = document.getElementById('file-checklist');
+  if (!items || !checklist) { return; }
+  items.innerHTML = '';
+  var fi1 = document.createElement('div');
+  fi1.className = 'file-item';
+  fi1.innerHTML = '<span class="fi-icon">\ud83d\udcc4</span><span class="fi-name">' + pdfFilename + '</span><span class="fi-size">PDF</span>';
   items.appendChild(fi1);
-  receipts.forEach(function(r){
-    var fi=document.createElement('div');fi.className='file-item';
-    fi.innerHTML='<span class="fi-icon">'+(r.type==='application/pdf'?'📄':'🖼️')+'</span><span class="fi-name">'+r.name+'</span><span class="fi-size">'+(r.size/1024).toFixed(0)+' KB</span>';
+  receipts.forEach(function (rc) {
+    var fi = document.createElement('div');
+    fi.className = 'file-item';
+    fi.innerHTML = '<span class="fi-icon">' + (rc.type === 'application/pdf' ? '\ud83d\udcc4' : '\ud83d\uddbc\ufe0f') + '</span>' +
+      '<span class="fi-name">' + rc.name + '</span>' +
+      '<span class="fi-size">' + (rc.size / 1024).toFixed(0) + ' KB</span>';
     items.appendChild(fi);
   });
-  document.getElementById('file-checklist').style.display='block';
-}
-
-/* ── MODAL HELPERS ── */
-function showSendModal(title){
-  document.getElementById('snd-head-title').textContent=title;
-  document.getElementById('snd-overlay').classList.add('on');
-}
-function closeSendModal(){document.getElementById('snd-overlay').classList.remove('on');}
-function reOpenOutlook(){if(lastMailtoStr)window.location.href=lastMailtoStr;else toast('⚠️ Δεν βρέθηκε σύνδεσμος','bad');}
-function setStep(num,state,icon){
-  var el=document.getElementById('step-'+num);if(!el)return;
-  el.className='snd-step '+state;
-  var iconEl=el.querySelector('.step-icon');
-  if(icon){iconEl.textContent=icon;}
-  else if(state==='active'){iconEl.innerHTML='<div class="ring"><div></div><div></div><div></div><div></div></div>';}
+  checklist.style.display = 'block';
 }
 
 /* ── DOWNLOAD BLOB ── */
-function downloadBlob(blob,mimeType,filename){
-  var url=URL.createObjectURL(new Blob([blob],{type:mimeType}));
-  var a=document.createElement('a');a.href=url;a.download=filename;
-  document.body.appendChild(a);a.click();
-  setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},2000);
+function downloadBlob(blob, mimeType, filename) {
+  var url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () {
+    URL.revokeObjectURL(url);
+    try { document.body.removeChild(a); } catch (e) {}
+  }, 2000);
 }
 
 /* ── PDF PREVIEW ── */
-async function previewPDF(){
-  var name=document.getElementById('f-name').value.trim();
-  if(!name){toast('⚠️ Εισάγετε τουλάχιστον το Ὄνομα Υπαλλήλου','bad');return;}
-  toast('⏳ PDF (3-5s)...','info');
-  try{
-    var doc=await generateFormPDF();
-    doc.save('preview_odoeporika.pdf');
-    toast('📄 PDF OK!','ok');
-  }catch(e){toast('❌: '+e.message,'bad');}
-}
-/* ═══════════════════════════════════════════
-   CONFIG MODAL
-═══════════════════════════════════════════ */
-function openConfig(){
-  document.getElementById('cfg-client-id').value=M365_CFG.clientId||'';
-  document.getElementById('cfg-tenant-id').value=M365_CFG.tenantId||'';
-  document.getElementById('cfg-m365-status').textContent='';
-  document.getElementById('cfg-overlay').classList.add('on');
-}
-function closeConfig(){document.getElementById('cfg-overlay').classList.remove('on');}
-
-function saveM365Config(){
-  var cid=document.getElementById('cfg-client-id').value.trim();
-  var tid=document.getElementById('cfg-tenant-id').value.trim();
-  if(!cid||!tid){
-    document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--red);">⚠️ Εισάγετε και τα δύο πεδία.</span>';
+async function previewPDF() {
+  var name = ((document.getElementById('f-name') || {}).value || '').trim();
+  if (!name) {
+    toast('\u26a0\ufe0f \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03c4\u03bf \u038c\u03bd\u03bf\u03bc\u03b1 \u03a5\u03c0\u03b1\u03bb\u03bb\u03ae\u03bb\u03bf\u03c5', 'bad');
     return;
   }
-  M365_CFG={clientId:cid,tenantId:tid,configured:true};
+  toast('\u23f3 \u0394\u03b7\u03bc\u03b9\u03bf\u03c5\u03c1\u03b3\u03af\u03b1 PDF (3-5 \u03b4\u03b5\u03c5\u03c4\u03b5\u03c1\u03cc\u03bb\u03b5\u03c0\u03c4\u03b1)\u2026', 'info');
+  try {
+    var doc = await generateFormPDF();
+    doc.save('preview_odoeporika.pdf');
+    toast('\ud83d\udcc4 PDF \u03b4\u03b7\u03bc\u03b9\u03bf\u03c5\u03c1\u03b3\u03ae\u03b8\u03b7\u03ba\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03ce\u03c2!', 'ok');
+  } catch (e) {
+    toast('\u274c ' + e.message, 'bad');
+  }
+}
+
+/* ══════════════════════════════════════════
+   CONFIG MODAL
+   ============================================ */
+function openConfig() {
+  var cidEl = document.getElementById('cfg-client-id');
+  var tidEl = document.getElementById('cfg-tenant-id');
+  var stEl  = document.getElementById('cfg-m365-status');
+  if (cidEl) { cidEl.value = M365_CFG.clientId || ''; }
+  if (tidEl) { tidEl.value = M365_CFG.tenantId || ''; }
+  if (stEl)  { stEl.textContent = ''; }
+  var ov = document.getElementById('cfg-overlay');
+  if (ov) { ov.classList.add('on'); }
+}
+function closeConfig() {
+  var ov = document.getElementById('cfg-overlay');
+  if (ov) { ov.classList.remove('on'); }
+}
+function saveM365Config() {
+  var cid = ((document.getElementById('cfg-client-id') || {}).value || '').trim();
+  var tid = ((document.getElementById('cfg-tenant-id') || {}).value || '').trim();
+  var stEl = document.getElementById('cfg-m365-status');
+  if (!cid || !tid) {
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--red);">\u26a0\ufe0f \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03ba\u03b1\u03b9 \u03c4\u03b1 \u03b4\u03cd\u03bf \u03c0\u03b5\u03b4\u03af\u03b1.</span>'; }
+    return;
+  }
+  M365_CFG = { clientId: cid, tenantId: tid, configured: true };
   saveM365ConfigToStorage();
-  var statusEl=document.getElementById('cfg-m365-status');
-  try{
+  try {
     initMSAL();
     selectMethod('m365');
     updateStatusBar();
-    statusEl.innerHTML='<span style="color:var(--green);">✅ Αποθηκεύτηκε! Πατήστε <strong>🔐 Δοκιμή Σύνδεσης</strong> για επαλήθευση με τον Microsoft λογαριασμό σας.</span>';
-    toast('✅ Microsoft 365 ρυθμίσεις αποθηκεύτηκαν','ok');
-  }catch(e){
-    statusEl.innerHTML='<span style="color:var(--red);">⚠️ Αποθηκεύτηκε αλλά σφάλμα MSAL: '+e.message+'</span>';
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--green);">\u2705 \u0391\u03c0\u03bf\u03b8\u03b7\u03ba\u03b5\u03cd\u03c4\u03b7\u03ba\u03b5! \u03a0\u03b1\u03c4\u03ae\u03c3\u03c4\u03b5 <strong>\u0394\u03bf\u03ba\u03b9\u03bc\u03ae \u03a3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7\u03c2</strong> \u03b3\u03b9\u03b1 \u03b5\u03c0\u03b1\u03bb\u03ae\u03b8\u03b5\u03c5\u03c3\u03b7.</span>'; }
+    toast('\u2705 Microsoft 365 \u03c1\u03c5\u03b8\u03bc\u03af\u03c3\u03b5\u03b9\u03c2 \u03b1\u03c0\u03bf\u03b8\u03b7\u03ba\u03b5\u03cd\u03c4\u03b7\u03ba\u03b1\u03bd', 'ok');
+  } catch (e) {
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--red);">\u26a0\ufe0f MSAL: ' + e.message + '</span>'; }
   }
 }
-
-async function testM365Login(){
-  var cid=document.getElementById('cfg-client-id').value.trim();
-  var tid=document.getElementById('cfg-tenant-id').value.trim();
-  if(!cid||!tid){
-    document.getElementById('cfg-m365-status').innerHTML=
-      '<span style="color:var(--red);">⚠️ Εισάγετε και τα δύο πεδία (Client ID + Tenant ID).</span>';
+async function testM365Login() {
+  var cid = ((document.getElementById('cfg-client-id') || {}).value || '').trim();
+  var tid = ((document.getElementById('cfg-tenant-id') || {}).value || '').trim();
+  var stEl = document.getElementById('cfg-m365-status');
+  if (!cid || !tid) {
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--red);">\u26a0\ufe0f \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 Client ID + Tenant ID.</span>'; }
     return;
   }
-
-  var statusEl=document.getElementById('cfg-m365-status');
-  statusEl.innerHTML='<span style="color:var(--blue);">⏳ Αρχικοποίηση MSAL…</span>';
-
-  try{
-    // ── Step 1: init MSAL (will throw with descriptive message if MSAL not loaded) ──
-    M365_CFG={clientId:cid,tenantId:tid,configured:true};
-    initMSAL(); // throws on error – do NOT use if(!initMSAL())
-
-    statusEl.innerHTML='<span style="color:var(--blue);">⏳ Άνοιγμα παραθύρου Microsoft…</span>';
-
-    // ── Step 2: login popup ──
-    var token=await getAccessToken();
-
-    if(token){
+  if (stEl) { stEl.innerHTML = '<span style="color:var(--blue);">\u23f3 \u0391\u03c1\u03c7\u03b9\u03ba\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7 MSAL\u2026</span>'; }
+  try {
+    M365_CFG = { clientId: cid, tenantId: tid, configured: true };
+    initMSAL();
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--blue);">\u23f3 \u0386\u03bd\u03bf\u03b9\u03b3\u03bc\u03b1 \u03c0\u03b1\u03c1\u03b1\u03b8\u03cd\u03c1\u03bf\u03c5 Microsoft\u2026</span>'; }
+    var token = await getAccessToken();
+    if (token) {
       saveM365ConfigToStorage();
       selectMethod('m365');
       updateStatusBar();
-      statusEl.innerHTML=
-        '<span style="color:var(--green);">✅ Σύνδεση επιτυχής! '+
-        'Microsoft 365 έτοιμο – τα email θα σταλούν αυτόματα με συνημμένα.</span>';
-      toast('✅ Microsoft 365 συνδέθηκε επιτυχώς!','ok');
+      if (stEl) { stEl.innerHTML = '<span style="color:var(--green);">\u2705 \u03a3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03ae\u03c2! Microsoft 365 \u03ad\u03c4\u03bf\u03b9\u03bc\u03bf.</span>'; }
+      toast('\u2705 Microsoft 365 \u03c3\u03c5\u03bd\u03b4\u03ad\u03b8\u03b7\u03ba\u03b5!', 'ok');
     }
-  }catch(e){
-    // ── Clear bad config so initMSAL won't break next page load ──
-    M365_CFG.configured=false;
-    msalInstance=null;
-    var msg=e.message||String(e);
-    console.error('[CyCert] testM365Login error:',e);
-    statusEl.innerHTML=
-      '<div style="color:var(--red);line-height:1.7;">'+
-      '❌ <strong>Σφάλμα:</strong> '+msg+
-      '</div>';
+  } catch (e) {
+    M365_CFG.configured = false;
+    msalInstance = null;
+    if (stEl) { stEl.innerHTML = '<span style="color:var(--red);">\u274c ' + (e.message || String(e)) + '</span>'; }
   }
 }
-
-function clearM365Config(){
-  M365_CFG={clientId:'',tenantId:'',configured:false};
-  localStorage.removeItem('cycert_m365');
-  msalInstance=null;
-  document.getElementById('cfg-client-id').value='';
-  document.getElementById('cfg-tenant-id').value='';
-  document.getElementById('cfg-m365-status').innerHTML='<span style="color:var(--gray-sub);">Ρυθμίσεις εκκαθαρίστηκαν.</span>';
+function clearM365Config() {
+  M365_CFG = { clientId: '', tenantId: '', configured: false };
+  try { localStorage.removeItem('cycert_m365'); } catch (e) {}
+  msalInstance = null;
+  var cidEl = document.getElementById('cfg-client-id');
+  var tidEl = document.getElementById('cfg-tenant-id');
+  var stEl  = document.getElementById('cfg-m365-status');
+  if (cidEl) { cidEl.value = ''; }
+  if (tidEl) { tidEl.value = ''; }
+  if (stEl) { stEl.innerHTML = '<span style="color:var(--gray-sub);">\u03a1\u03c5\u03b8\u03bc\u03af\u03c3\u03b5\u03b9\u03c2 \u03b5\u03ba\u03ba\u03b1\u03b8\u03b1\u03c1\u03af\u03c3\u03c4\u03b7\u03ba\u03b1\u03bd.</span>'; }
   selectMethod('outlook');
   updateStatusBar();
-  toast('🗑️ Ρυθμίσεις M365 εκκαθαρίστηκαν','');
+  toast('\ud83d\uddd1\ufe0f \u03a1\u03c5\u03b8\u03bc\u03af\u03c3\u03b5\u03b9\u03c2 M365 \u03b5\u03ba\u03ba\u03b1\u03b8\u03b1\u03c1\u03af\u03c3\u03c4\u03b7\u03ba\u03b1\u03bd', '');
 }
 
-/* ═══════════════ MAPS MODAL ═══════════════ */
-function openModal(r){
-  activeRow=r;foundKm=null;
-  var fv=(document.getElementById('fr-'+r)||{value:''}).value;
-  var tv=(document.getElementById('to-'+r)||{value:''}).value;
-  document.getElementById('m-from').value=fv;document.getElementById('m-to').value=tv;
-  document.getElementById('m-result').classList.remove('show');
-  document.getElementById('m-iframe').style.display='none';
-  document.getElementById('m-ph').style.display='flex';
-  document.getElementById('m-ph').innerHTML='<svg width="60" height="60" viewBox="0 0 24 24" fill="#0078d4"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><div>Εισάγετε αναχώρηση &amp; προορισμό</div>';
-  document.getElementById('m-overlay').classList.add('on');
-  if(fv&&tv)setTimeout(findRoute,250);
+/* ══════════════════════════════════════════
+   MAPS MODAL
+   ============================================ */
+function openModal(r) {
+  activeRow = r;
+  foundKm = null;
+  var fv = ((document.getElementById('fr-' + r) || {}).value) || '';
+  var tv = ((document.getElementById('to-' + r) || {}).value) || '';
+  var fromEl = document.getElementById('m-from');
+  var toEl   = document.getElementById('m-to');
+  if (fromEl) { fromEl.value = fv; }
+  if (toEl)   { toEl.value = tv; }
+  var resultEl = document.getElementById('m-result');
+  var iframeEl = document.getElementById('m-iframe');
+  var phEl     = document.getElementById('m-ph');
+  if (resultEl) { resultEl.classList.remove('show'); }
+  if (iframeEl) { iframeEl.style.display = 'none'; iframeEl.src = ''; }
+  if (phEl) {
+    phEl.style.display = 'flex';
+    phEl.innerHTML = '\ud83d\uddfa\ufe0f<br>\u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03b1\u03bd\u03b1\u03c7\u03ce\u03c1\u03b7\u03c3\u03b7 &amp; \u03c0\u03c1\u03bf\u03bf\u03c1\u03b9\u03c3\u03bc\u03cc \u03ba\u03b1\u03b9 \u03c0\u03b1\u03c4\u03ae\u03c3\u03c4\u03b5 \u0395\u03cd\u03c1\u03b5\u03c3\u03b7';
+  }
+  var ov = document.getElementById('m-overlay');
+  if (ov) { ov.classList.add('on'); }
+  if (fv && tv) { setTimeout(findRoute, 280); }
 }
-function closeModal(){document.getElementById('m-overlay').classList.remove('on');document.getElementById('m-iframe').src='';activeRow=null;foundKm=null;}
-function findRoute(){
-  var from=document.getElementById('m-from').value.trim(),to=document.getElementById('m-to').value.trim();
-  if(!from||!to){toast('⚠️ Εισάγετε αναχώρηση και προορισμό','bad');return;}
-  document.getElementById('m-ph').style.display='flex';
-  document.getElementById('m-ph').innerHTML='<div class="ring"><div></div><div></div><div></div><div></div></div><div>Φόρτωση…</div>';
-  document.getElementById('m-iframe').style.display='none';
-  document.getElementById('m-result').classList.remove('show');
-  var fr=document.getElementById('m-iframe');
-  fr.onload=function(){document.getElementById('m-ph').style.display='none';fr.style.display='block';};
-  fr.src='https://maps.google.com/maps?saddr='+encodeURIComponent(from)+'&daddr='+encodeURIComponent(to)+'&t=&z=9&output=embed&iwloc=';
-  calcDist(from,to);
+
+function closeModal() {
+  var ov = document.getElementById('m-overlay');
+  if (ov) { ov.classList.remove('on'); }
+  var iframeEl = document.getElementById('m-iframe');
+  if (iframeEl) { iframeEl.src = ''; iframeEl.style.display = 'none'; }
+  activeRow = null;
+  foundKm = null;
 }
-async function calcDist(from,to){
-  try{
-    var gF=await geocode(from),gT=await geocode(to);
-    if(!gF||!gT){toast('⚠️ Αδυναμία εύρεσης τοποθεσίας','bad');return;}
-    var url='https://router.project-osrm.org/route/v1/driving/'+gF.lon+','+gF.lat+';'+gT.lon+','+gT.lat+'?overview=false';
-    var resp=await fetch(url),data=await resp.json();
-    if(data.code==='Ok'&&data.routes.length){
-      var km=(data.routes[0].distance/1000).toFixed(1);
-      var mins=Math.round(data.routes[0].duration/60);
-      var h=Math.floor(mins/60),m=mins%60;
-      foundKm=parseFloat(km);
-      set('m-dist',km+' km');set('m-dur',h>0?h+'ω '+m+'λ':m+' λ');
-      document.getElementById('m-ri').innerHTML='<div style="font-size:12px;color:var(--gray-sub);line-height:1.4;">📍 '+gF.name+'<br>➡️ '+gT.name+'</div>';
-      document.getElementById('m-result').classList.add('show');
-    }else toast('⚠️ Δεν βρέθηκε διαδρομή','bad');
-  }catch(e){toast('⚠️ Σφάλμα σύνδεσης. Εισάγετε χλμ χειροκίνητα.','bad');}
+
+function findRoute() {
+  var from = ((document.getElementById('m-from') || {}).value || '').trim();
+  var to   = ((document.getElementById('m-to')   || {}).value || '').trim();
+  if (!from || !to) {
+    toast('\u26a0\ufe0f \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03b1\u03bd\u03b1\u03c7\u03ce\u03c1\u03b7\u03c3\u03b7 \u03ba\u03b1\u03b9 \u03c0\u03c1\u03bf\u03bf\u03c1\u03b9\u03c3\u03bc\u03cc', 'bad');
+    return;
+  }
+
+  var phEl = document.getElementById('m-ph');
+  var iframeEl = document.getElementById('m-iframe');
+  var resultEl = document.getElementById('m-result');
+  if (phEl) { phEl.style.display = 'flex'; phEl.innerHTML = '<div class="ring"><div></div><div></div><div></div><div></div></div><div>\u03a6\u03cc\u03c1\u03c4\u03c9\u03c3\u03b7\u2026</div>'; }
+  if (iframeEl) { iframeEl.style.display = 'none'; }
+  if (resultEl) { resultEl.classList.remove('show'); }
+
+  // Load Google Maps embed
+  if (iframeEl) {
+    iframeEl.onload = function () {
+      if (phEl) { phEl.style.display = 'none'; }
+      iframeEl.style.display = 'block';
+    };
+    iframeEl.src = 'https://maps.google.com/maps?saddr=' + encodeURIComponent(from) +
+      '&daddr=' + encodeURIComponent(to) + '&t=&z=9&output=embed&iwloc=';
+  }
+
+  // Calculate distance
+  calcDist(from, to);
 }
-async function geocode(place){
-  try{
-    var hasCY=/κυπρ|κύπρ|cyprus|nicosia|leukosia|λεμεσ|limassol|λάρνακ|larnaca|πάφος|paphos|αμμόχωστος|famagusta|λευκωσία/i.test(place);
-    var q=hasCY?place:place+', Κύπρος';
-    var url1='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=cy&limit=3&addressdetails=1';
-    var r1=await fetch(url1,{headers:{'Accept-Language':'el,en;q=0.9'}});
-    var d1=await r1.json();
-    if(d1&&d1.length)return{lat:d1[0].lat,lon:d1[0].lon,name:d1[0].display_name.split(',')[0]};
-    var url2='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=3';
-    var r2=await fetch(url2,{headers:{'Accept-Language':'el,en;q=0.9'}});
-    var d2=await r2.json();
-    if(d2&&d2.length)return{lat:d2[0].lat,lon:d2[0].lon,name:d2[0].display_name.split(',')[0]};
-    if(!hasCY){
-      var url3='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(place+' Cyprus')+'&limit=3';
-      var r3=await fetch(url3,{headers:{'Accept-Language':'el,en;q=0.9'}});
-      var d3=await r3.json();
-      if(d3&&d3.length)return{lat:d3[0].lat,lon:d3[0].lon,name:d3[0].display_name.split(',')[0]};
+
+async function calcDist(from, to) {
+  try {
+    var gF = await geocode(from);
+    var gT = await geocode(to);
+    if (!gF || !gT) {
+      toast('\u26a0\ufe0f \u0391\u03b4\u03c5\u03bd\u03b1\u03bc\u03af\u03b1 \u03b5\u03cd\u03c1\u03b5\u03c3\u03b7\u03c2 \u03c4\u03bf\u03c0\u03bf\u03b8\u03b5\u03c3\u03af\u03b1\u03c2. \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03c7\u03bb\u03bc \u03c7\u03b5\u03b9\u03c1\u03bf\u03ba\u03af\u03bd\u03b7\u03c4\u03b1.', 'bad');
+      return;
+    }
+    var url = 'https://router.project-osrm.org/route/v1/driving/' +
+      gF.lon + ',' + gF.lat + ';' + gT.lon + ',' + gT.lat + '?overview=false';
+    var resp = await fetch(url);
+    var data = await resp.json();
+    if (data.code === 'Ok' && data.routes.length) {
+      var km   = (data.routes[0].distance / 1000).toFixed(1);
+      var mins = Math.round(data.routes[0].duration / 60);
+      var h = Math.floor(mins / 60), m = mins % 60;
+      foundKm = parseFloat(km);
+      setEl('m-dist', km + ' km');
+      setEl('m-dur', h > 0 ? h + '\u03c9 ' + m + '\u03bb' : m + ' \u03bb');
+      var riEl = document.getElementById('m-ri');
+      if (riEl) {
+        riEl.innerHTML = '<div style="font-size:12px;color:var(--gray-sub);line-height:1.5;">' +
+          '\ud83d\udccd ' + gF.name + '<br>\u27a1\ufe0f ' + gT.name + '</div>';
+      }
+      var resultEl = document.getElementById('m-result');
+      if (resultEl) { resultEl.classList.add('show'); }
+    } else {
+      toast('\u26a0\ufe0f \u0394\u03b5\u03bd \u03b2\u03c1\u03ad\u03b8\u03b7\u03ba\u03b5 \u03b4\u03b9\u03b1\u03b4\u03c1\u03bf\u03bc\u03ae. \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03c7\u03bb\u03bc \u03c7\u03b5\u03b9\u03c1\u03bf\u03ba\u03af\u03bd\u03b7\u03c4\u03b1.', 'bad');
+    }
+  } catch (e) {
+    toast('\u26a0\ufe0f \u03a3\u03c6\u03ac\u03bb\u03bc\u03b1 \u03c3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7\u03c2. \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03c7\u03bb\u03bc \u03c7\u03b5\u03b9\u03c1\u03bf\u03ba\u03af\u03bd\u03b7\u03c4\u03b1.', 'bad');
+  }
+}
+
+/* ── GEOCODE (Cyprus-focused, 3-attempt fallback) ── */
+async function geocode(place) {
+  if (!place) { return null; }
+  var cyKw = /\u03ba\u03c5\u03c0\u03c1|\u039a\u03cd\u03c0\u03c1|\u03ba\u03cd\u03c0\u03c1|cyprus|nicosia|\u03bb\u03b5\u03c5\u03ba\u03c9\u03c3|\u039b\u03b5\u03c5\u03ba\u03c9\u03c3|\u03bb\u03b5\u03bc\u03b5\u03c3|\u039b\u03b5\u03bc\u03b5\u03c3|limassol|\u03bb\u03ac\u03c1\u03bd|\u039b\u03ac\u03c1\u03bd|larnaca|\u03c0\u03ac\u03c6|paphos|\u03b1\u03bc\u03bc\u03cc\u03c7|famagusta/i;
+  var hasCY = cyKw.test(place);
+  var q = hasCY ? place : place + ', \u039a\u03cd\u03c0\u03c1\u03bf\u03c2';
+  var baseUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=3&addressdetails=1';
+  var hdrs = { 'Accept-Language': 'el,en;q=0.9', 'User-Agent': 'CyCert-Odoeporika/7' };
+
+  try {
+    // Attempt 1: Cyprus country code
+    var r1 = await fetch(baseUrl + '&q=' + encodeURIComponent(q) + '&countrycodes=cy', { headers: hdrs });
+    var d1 = await r1.json();
+    if (d1 && d1.length) {
+      return { lat: d1[0].lat, lon: d1[0].lon, name: d1[0].display_name.split(',')[0] };
+    }
+    // Attempt 2: without country code
+    var r2 = await fetch(baseUrl + '&q=' + encodeURIComponent(q), { headers: hdrs });
+    var d2 = await r2.json();
+    if (d2 && d2.length) {
+      return { lat: d2[0].lat, lon: d2[0].lon, name: d2[0].display_name.split(',')[0] };
+    }
+    // Attempt 3: English name with Cyprus
+    if (!hasCY) {
+      var r3 = await fetch(baseUrl + '&q=' + encodeURIComponent(place + ' Cyprus') + '&countrycodes=cy', { headers: hdrs });
+      var d3 = await r3.json();
+      if (d3 && d3.length) {
+        return { lat: d3[0].lat, lon: d3[0].lon, name: d3[0].display_name.split(',')[0] };
+      }
     }
     return null;
-  }catch(e){console.warn('Geocode:',e);return null;}
-}
-function useKm(multiplier){
-  if(!foundKm||!activeRow)return;
-  multiplier=multiplier||1;
-  var km=multiplier>1?parseFloat((foundKm*multiplier).toFixed(1)):foundKm;
-  var r=activeRow,inp=document.getElementById('km-'+r);
-  if(inp){
-    inp.value=km;
-    inp.style.transition='background .3s';
-    inp.style.background=multiplier>1?'#f0f0fb':'#dff6dd';
-    setTimeout(function(){inp.style.background='transparent';},1500);
+  } catch (e) {
+    console.warn('[CyCert] Geocode error:', e);
+    return null;
   }
-  var st=document.getElementById('ks-'+r);
-  if(st){
-    st.textContent=(multiplier>1?'🔄':'✅')+' '+km+' km'+(multiplier>1?' (μ/επ.)':'');
-    st.className='km-st ok';
-  }
-  var rtCb=document.getElementById('rt-'+r);
-  if(rtCb)rtCb.checked=(multiplier>1);
-  var fv=document.getElementById('m-from').value,tv=document.getElementById('m-to').value;
-  var frEl=document.getElementById('fr-'+r),toEl=document.getElementById('to-'+r);
-  if(frEl&&!frEl.value)frEl.value=fv;if(toEl&&!toEl.value)toEl.value=tv;
-  var lnk=document.getElementById('gl-'+r);
-  if(lnk){lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(fv)+'/'+encodeURIComponent(tv);lnk.classList.add('show');}
-  recalc();closeModal();
-  toast('✅ '+km+' km → Γρ.'+r+(multiplier>1?' (μετ/επ.)':''),'ok');
 }
 
-/* ═══════════════ CALC ALL ═══════════════ */
-async function calcAll(){
-  toast('⏳ Υπολογισμός…','info');var cnt=0;
-  for(var i=1;i<=rowCount;i++){
-    var frEl=document.getElementById('fr-'+i),toEl=document.getElementById('to-'+i),kmEl=document.getElementById('km-'+i);
-    if(!frEl||!toEl||!kmEl)continue;
-    var f=frEl.value.trim(),t=toEl.value.trim();
-    if(!f||!t||kmEl.value)continue;
-    try{
-      var gF=await geocode(f),gT=await geocode(t);
-      if(!gF||!gT)continue;
-      await sleep(850);
-      var url='https://router.project-osrm.org/route/v1/driving/'+gF.lon+','+gF.lat+';'+gT.lon+','+gT.lat+'?overview=false';
-      var resp=await fetch(url),data=await resp.json();
-      if(data.code==='Ok'&&data.routes.length){
-        var km=(data.routes[0].distance/1000).toFixed(1);kmEl.value=km;
-        var st=document.getElementById('ks-'+i);if(st){st.textContent='✅ '+km+' km';st.className='km-st ok';}
-        var lnk=document.getElementById('gl-'+i);if(lnk){lnk.href='https://www.google.com/maps/dir/'+encodeURIComponent(f)+'/'+encodeURIComponent(t);lnk.classList.add('show');}
+/* ── USE KM (one-way or round-trip) ── */
+function useKm(multiplier) {
+  if (!foundKm || !activeRow) { return; }
+  multiplier = multiplier || 1;
+  var km = parseFloat((foundKm * multiplier).toFixed(1));
+  var r = activeRow;
+  var kmEl = document.getElementById('km-' + r);
+  if (kmEl) {
+    kmEl.value = km;
+    kmEl.style.transition = 'background .3s';
+    kmEl.style.background = multiplier > 1 ? '#f0f0fb' : '#dff6dd';
+    setTimeout(function () { kmEl.style.background = 'transparent'; }, 1500);
+  }
+  var stEl = document.getElementById('ks-' + r);
+  if (stEl) {
+    stEl.textContent = (multiplier > 1 ? '\ud83d\udd04' : '\u2705') + ' ' + km + ' km' + (multiplier > 1 ? ' (\u03bc/\u03b5\u03c0.)' : '');
+    stEl.className = 'km-st ok';
+  }
+  var rtCb = document.getElementById('rt-' + r);
+  if (rtCb) { rtCb.checked = (multiplier > 1); }
+
+  // Auto-fill from/to if empty
+  var fv = ((document.getElementById('m-from') || {}).value) || '';
+  var tv = ((document.getElementById('m-to')   || {}).value) || '';
+  var frEl = document.getElementById('fr-' + r);
+  var toEl = document.getElementById('to-' + r);
+  if (frEl && !frEl.value) { frEl.value = fv; }
+  if (toEl && !toEl.value) { toEl.value = tv; }
+
+  // Show Google Maps link
+  var lnkEl = document.getElementById('gl-' + r);
+  if (lnkEl && fv && tv) {
+    lnkEl.href = 'https://www.google.com/maps/dir/' + encodeURIComponent(fv) + '/' + encodeURIComponent(tv);
+    lnkEl.classList.add('show');
+  }
+
+  recalc();
+  closeModal();
+  toast('\u2705 ' + km + ' km \u2192 \u0393\u03c1.' + r + (multiplier > 1 ? ' (\u03bc\u03b5\u03c4/\u03b5\u03c0.)' : ''), 'ok');
+}
+
+/* ── CALC ALL ── */
+async function calcAll() {
+  toast('\u23f3 \u03a5\u03c0\u03bf\u03bb\u03bf\u03b3\u03b9\u03c3\u03bc\u03cc\u03c2\u2026', 'info');
+  var cnt = 0;
+  for (var i = 1; i <= rowCount; i++) {
+    var frEl = document.getElementById('fr-' + i);
+    var toEl = document.getElementById('to-' + i);
+    var kmEl = document.getElementById('km-' + i);
+    if (!frEl || !toEl || !kmEl) { continue; }
+    var f = frEl.value.trim(), t = toEl.value.trim();
+    if (!f || !t || kmEl.value) { continue; }
+    try {
+      var gF = await geocode(f), gT = await geocode(t);
+      if (!gF || !gT) { continue; }
+      await sleep(850); // respect Nominatim rate limit
+      var url = 'https://router.project-osrm.org/route/v1/driving/' +
+        gF.lon + ',' + gF.lat + ';' + gT.lon + ',' + gT.lat + '?overview=false';
+      var resp = await fetch(url);
+      var data = await resp.json();
+      if (data.code === 'Ok' && data.routes.length) {
+        var km = (data.routes[0].distance / 1000).toFixed(1);
+        kmEl.value = km;
+        var stEl = document.getElementById('ks-' + i);
+        if (stEl) { stEl.textContent = '\u2705 ' + km + ' km'; stEl.className = 'km-st ok'; }
+        var lnkEl = document.getElementById('gl-' + i);
+        if (lnkEl) {
+          lnkEl.href = 'https://www.google.com/maps/dir/' + encodeURIComponent(f) + '/' + encodeURIComponent(t);
+          lnkEl.classList.add('show');
+        }
         cnt++;
       }
-    }catch(e){}
+    } catch (e) { /* skip this row */ }
   }
-  recalc();toast('✅ '+cnt+' διαδρομές υπολογίστηκαν','ok');
+  recalc();
+  toast('\u2705 ' + cnt + ' \u03b4\u03b9\u03b1\u03b4\u03c1\u03bf\u03bc\u03ad\u03c2 \u03c5\u03c0\u03bf\u03bb\u03bf\u03b3\u03af\u03c3\u03c4\u03b7\u03ba\u03b1\u03bd', 'ok');
 }
 
-/* ═══════════════ SAVE / CLEAR ═══════════════ */
-function doSave(){
-  var n=document.getElementById('f-name').value.trim(),p=document.getElementById('f-pos').value.trim(),v=document.getElementById('f-veh').value.trim();
-  if(!n||!p||!v){toast('⚠️ Συμπληρώστε: Όνομα, Θέση, Όχημα','bad');return;}
-  var now=new Date();
-  set('last-save-time',now.toLocaleString('el-GR',{dateStyle:'short',timeStyle:'short'}));
-  var b=document.getElementById('banner');b.className='banner ok';
-  b.innerHTML='✅ <span>Αποθηκεύτηκε <strong>'+now.toLocaleTimeString('el-GR')+'</strong></span>';
-  toast('✅ Αποθηκεύτηκε','ok');
-}
-function doClear(){
-  if(!confirm('Εκκαθάριση όλων;'))return;
-  ['f-name','f-pos','f-veh','f-dept','send-notes','send-cc'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
-  for(var i=1;i<=rowCount;i++){
-    ['d-','fr-','to-','pu-','pk-','km-'].forEach(function(p){var e=document.getElementById(p+i);if(e)e.value='';});
-    var s=document.getElementById('ks-'+i);if(s){s.textContent='';s.className='km-st';}
-    var l=document.getElementById('gl-'+i);if(l)l.classList.remove('show');
-    var rc=document.getElementById('rc-'+i);if(rc)rc.textContent='';
+/* ── SAVE / CLEAR ── */
+function doSave() {
+  var n = ((document.getElementById('f-name') || {}).value || '').trim();
+  var p = ((document.getElementById('f-pos')  || {}).value || '').trim();
+  var v = ((document.getElementById('f-veh')  || {}).value || '').trim();
+  if (!n || !p || !v) {
+    toast('\u26a0\ufe0f \u03a3\u03c5\u03bc\u03c0\u03bb\u03b7\u03c1\u03ce\u03c3\u03c4\u03b5: \u038c\u03bd\u03bf\u03bc\u03b1, \u0398\u03ad\u03c3\u03b7, \u038c\u03c7\u03b7\u03bc\u03b1', 'bad');
+    return;
   }
-  receipts=[];renderReceipts();recalc();
-  toast('🗑️ Εκκαθαρίστηκε','');
+  var now = new Date();
+  setEl('last-save-time', now.toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' }));
+  var b = document.getElementById('banner');
+  if (b) {
+    b.className = 'banner ok';
+    b.innerHTML = '\u2705 <span>\u0391\u03c0\u03bf\u03b8\u03b7\u03ba\u03b5\u03cd\u03c4\u03b7\u03ba\u03b5 <strong>' + now.toLocaleTimeString('el-GR') + '</strong></span>';
+  }
+  toast('\u2705 \u0391\u03c0\u03bf\u03b8\u03b7\u03ba\u03b5\u03cd\u03c4\u03b7\u03ba\u03b5', 'ok');
+}
+function doClear() {
+  if (!confirm('\u0395\u03ba\u03ba\u03b1\u03b8\u03ac\u03c1\u03b9\u03c3\u03b7 \u03cc\u03bb\u03c9\u03bd \u03c4\u03c9\u03bd \u03b4\u03b5\u03b4\u03bf\u03bc\u03ad\u03bd\u03c9\u03bd;')) { return; }
+  ['f-name','f-pos','f-veh','f-dept','send-notes','send-cc'].forEach(function (id) {
+    var e = document.getElementById(id);
+    if (e) { e.value = ''; }
+  });
+  for (var i = 1; i <= rowCount; i++) {
+    ['d-','fr-','to-','pu-','pk-','km-'].forEach(function (p) {
+      var e = document.getElementById(p + i);
+      if (e) { e.value = ''; }
+    });
+    var sEl = document.getElementById('ks-' + i);
+    if (sEl) { sEl.textContent = ''; sEl.className = 'km-st'; }
+    var lEl = document.getElementById('gl-' + i);
+    if (lEl) { lEl.classList.remove('show'); }
+    var rcEl = document.getElementById('rc-' + i);
+    if (rcEl) { rcEl.textContent = ''; }
+    var rtEl = document.getElementById('rt-' + i);
+    if (rtEl) { rtEl.checked = false; }
+  }
+  receipts = [];
+  renderReceipts();
+  recalc();
+  toast('\ud83d\uddd1\ufe0f \u0395\u03ba\u03ba\u03b1\u03b8\u03b1\u03c1\u03af\u03c3\u03c4\u03b7\u03ba\u03b5', '');
 }
 
-/* ═══════════════ UTILS ═══════════════ */
-function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
-function toast(msg,type){
-  var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');
-  void t.offsetWidth;t.classList.add('on');clearTimeout(toastTmr);
-  toastTmr=setTimeout(function(){t.classList.remove('on');},4200);
+/* ── UTILS ── */
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  if (!t) { return; }
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '');
+  void t.offsetWidth; // force reflow
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove('on'); }, 4200);
 }
 
-/* ── KEYBOARD SHORTCUTS ── */
-document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'){closeModal();closeSendModal();closeConfig();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();doSave();}
+/* ── KEYBOARD SHORTCUTS & OVERLAY CLICKS ── */
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { closeModal(); closeSendModal(); closeConfig(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(); }
 });
-document.getElementById('m-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
-document.getElementById('cfg-overlay').addEventListener('click',function(e){if(e.target===this)closeConfig();});
-['m-from','m-to'].forEach(function(id){document.getElementById(id).addEventListener('keydown',function(e){if(e.key==='Enter')findRoute();});});
+
+var mOv = document.getElementById('m-overlay');
+if (mOv) { mOv.addEventListener('click', function (e) { if (e.target === this) { closeModal(); } }); }
+
+var cfgOv = document.getElementById('cfg-overlay');
+if (cfgOv) { cfgOv.addEventListener('click', function (e) { if (e.target === this) { closeConfig(); } }); }
+
+var sndOv = document.getElementById('snd-overlay');
+if (sndOv) { sndOv.addEventListener('click', function (e) { if (e.target === this) { closeSendModal(); } }); }
+
+['m-from','m-to'].forEach(function (id) {
+  var el = document.getElementById(id);
+  if (el) { el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { findRoute(); } }); }
+});
 </script>
 </body>
 </html>
