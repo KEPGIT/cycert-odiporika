@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v7.2 – Offline</title>
+<title>Δελτίο Πληρωμής Οδοιπορικών – CyCert v7.3 – Offline</title>
 
 <!-- jsPDF (inlined – no CDN, works offline/SharePoint) -->
 <script>/* jsPDF 2.5.1 – inlined, no CDN needed */
@@ -766,7 +766,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">
         Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5f3c3a2d2b3639363c3e2b3630311f3c263c3a2d2b71302d38713c26">[email&#160;protected]</a>
+        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e3808691978a858a8082978a8c8da3809a80869197cd8c9184cd809a">[email&#160;protected]</a>
       </div>
     </div>
     <div class="form-title-area">
@@ -1167,12 +1167,42 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
     </div>
     <div class="m-frame-wrap" id="m-frame-wrap">
       <div class="m-ph" id="m-ph">
-        &#128506;&#65039;<br>Εισάγετε αναχώρηση &amp; προορισμό και πατήστε Εύρεση
+        &#127758;<br>&#917;&#953;&#963;&#940;&#947;&#949;&#964;&#949; &#945;&#957;&#945;&#967;&#974;&#961;&#951;&#963;&#951; &amp; &#960;&#961;&#959;&#959;&#961;&#953;&#963;&#956;&#972; &amp; &#960;&#945;&#964;&#942;&#963;&#964;&#949; &#171;&#902;&#957;&#959;&#953;&#947;&#956;&#945; Google Maps&#187;
       </div>
-      <iframe id="m-iframe" src="" style="display:none;"
-              width="100%" height="400" frameborder="0"
-              allowfullscreen loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <!-- Google Maps open button (shown after findRoute) -->
+      <div id="m-gmaps-btn-wrap" style="display:none;padding:18px 20px;text-align:center;border-bottom:1px solid #edebe9;">
+        <a id="m-gmaps-open" href="#" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:10px;background:#4285F4;color:#fff;
+                  padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:700;font-size:14px;
+                  box-shadow:0 2px 8px rgba(66,133,244,.4);">
+          &#127758; &#902;&#957;&#959;&#953;&#947;&#956;&#945; Google Maps
+          <span style="font-size:11px;opacity:.8;">(&#945;&#957;&#959;&#943;&#947;&#949;&#953; &#957;&#941;&#945; &#954;&#945;&#961;&#964;&#949;&#955;&#940;&#954;&#953;)</span>
+        </a>
+        <div style="margin-top:12px;padding:10px 14px;background:#fff9e6;border:1px solid #f0c040;
+                    border-radius:4px;font-size:12px;color:#7a6000;line-height:1.7;text-align:left;">
+          &#128161; <strong>&#927;&#948;&#951;&#947;&#943;&#949;&#962;:</strong> &#913;&#957;&#959;&#943;&#958;&#964;&#949; Google Maps, &#948;&#949;&#943;&#964;&#949; &#964;&#951;&#957; <strong>&#945;&#960;&#972;&#963;&#964;&#945;&#963;&#951; &#959;&#948;&#942;&#947;&#951;&#963;&#951;&#962;</strong>
+          &amp; &#949;&#960;&#953;&#963;&#964;&#961;&#941;&#968;&#964;&#949; &#949;&#948;&#974; &#947;&#953;&#945; &#957;&#945; &#964;&#951;&#957; &#949;&#953;&#963;&#940;&#947;&#949;&#964;&#949; &#960;&#945;&#961;&#945;&#954;&#940;&#964;&#969;.
+        </div>
+      </div>
+      <!-- Manual km input (after user reads Google Maps distance) -->
+      <div id="m-manual-km-wrap" style="display:none;padding:14px 20px;background:#f3f9ff;border-bottom:1px solid #deecf9;">
+        <label style="font-size:12px;font-weight:700;color:#005a9e;display:block;margin-bottom:7px;">
+          &#9999; &#917;&#953;&#963;&#940;&#947;&#949;&#964;&#949; &#945;&#960;&#972;&#963;&#964;&#945;&#963;&#951; &#945;&#960;&#972; Google Maps (km):
+        </label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input id="m-manual-km" type="number" min="0.1" step="0.1" placeholder="&#960;.&#967;. 45.2"
+                 style="width:110px;padding:8px 10px;border:2px solid #0078d4;border-radius:3px;
+                        font-size:15px;font-weight:700;text-align:center;">
+          <button onclick="applyManualKm(1)"
+                  style="padding:8px 16px;background:#107c10;color:#fff;border:none;border-radius:3px;
+                         font-weight:700;font-size:13px;cursor:pointer;">&#10003; A&#8594;B (&#215;1)</button>
+          <button onclick="applyManualKm(2)"
+                  style="padding:8px 16px;background:#6264a7;color:#fff;border:none;border-radius:3px;
+                         font-weight:700;font-size:13px;cursor:pointer;">&#128260; &#924;&#949;&#964;/&#917;&#960;&#953;&#963;&#964;&#961;. (&#215;2)</button>
+        </div>
+      </div>
+      <!-- hidden dummy iframe (kept so existing JS refs dont break) -->
+      <iframe id="m-iframe" src="" style="display:none;" width="1" height="1" frameborder="0"></iframe>
     </div>
   </div>
 </div>
@@ -1667,7 +1697,7 @@ function buildPrintBody() {
         '<div class="sig-box">\u039b\u03bf\u03b3\u03b9\u03c3\u03c4\u03ae\u03c1\u03b9\u03bf</div>' +
       '</div>' +
     '</div>' +
-    '<div class="footer">\u039a\u03c5\u03c0\u03c1\u03b9\u03b1\u03ba\u03ae \u0395\u03c4\u03b1\u03b9\u03c1\u03b5\u03af\u03b1 \u03a0\u03b9\u03c3\u03c4\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7\u03c2 | CyCert v7.2</div>' +
+    '<div class="footer">\u039a\u03c5\u03c0\u03c1\u03b9\u03b1\u03ba\u03ae \u0395\u03c4\u03b1\u03b9\u03c1\u03b5\u03af\u03b1 \u03a0\u03b9\u03c3\u03c4\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7\u03c2 | CyCert v7.3</div>' +
     '</body></html>';
 }
 
@@ -2223,6 +2253,13 @@ function openModal(r) {
   }
   var ov = document.getElementById('m-overlay');
   if (ov) { ov.classList.add('on'); }
+  // Reset Google Maps panels
+  var gmapsBtnWrap = document.getElementById('m-gmaps-btn-wrap');
+  var manualWrap   = document.getElementById('m-manual-km-wrap');
+  var manualInp    = document.getElementById('m-manual-km');
+  if (gmapsBtnWrap) { gmapsBtnWrap.style.display = 'none'; }
+  if (manualWrap)   { manualWrap.style.display = 'none'; }
+  if (manualInp)    { manualInp.value = ''; }
   if (fv && tv) { setTimeout(findRoute, 280); }
 }
 
@@ -2243,25 +2280,37 @@ function findRoute() {
     return;
   }
 
-  var phEl = document.getElementById('m-ph');
-  var iframeEl = document.getElementById('m-iframe');
-  var resultEl = document.getElementById('m-result');
-  if (phEl) { phEl.style.display = 'flex'; phEl.innerHTML = '<div class="ring"><div></div><div></div><div></div><div></div></div><div>\u03a6\u03cc\u03c1\u03c4\u03c9\u03c3\u03b7\u2026</div>'; }
-  if (iframeEl) { iframeEl.style.display = 'none'; }
-  if (resultEl) { resultEl.classList.remove('show'); }
+  // Build the Google Maps directions URL
+  var mapsUrl = 'https://www.google.com/maps/dir/' +
+    encodeURIComponent(from) + '/' + encodeURIComponent(to);
 
-  // Load Google Maps embed
-  if (iframeEl) {
-    iframeEl.onload = function () {
-      if (phEl) { phEl.style.display = 'none'; }
-      iframeEl.style.display = 'block';
-    };
-    iframeEl.src = 'https://maps.google.com/maps?saddr=' + encodeURIComponent(from) +
-      '&daddr=' + encodeURIComponent(to) + '&t=&z=9&output=embed&iwloc=';
-  }
+  // Show the "Open Google Maps" button panel
+  var phEl        = document.getElementById('m-ph');
+  var gmapsBtnWrap = document.getElementById('m-gmaps-btn-wrap');
+  var gmapsLink   = document.getElementById('m-gmaps-open');
+  var manualWrap  = document.getElementById('m-manual-km-wrap');
+  var resultEl    = document.getElementById('m-result');
 
-  // Calculate distance
+  if (phEl)         { phEl.style.display = 'none'; }
+  if (gmapsBtnWrap) { gmapsBtnWrap.style.display = 'block'; }
+  if (gmapsLink)    { gmapsLink.href = mapsUrl; }
+  if (manualWrap)   { manualWrap.style.display = 'block'; }
+  if (resultEl)     { resultEl.classList.remove('show'); }
+
+  // Also attempt OSRM background distance calc as a convenience pre-fill
   calcDist(from, to);
+}
+
+/* ── Apply km typed manually (read from Google Maps by user) ── */
+function applyManualKm(multiplier) {
+  var inp = document.getElementById('m-manual-km');
+  var raw = inp ? parseFloat(inp.value) : NaN;
+  if (!raw || isNaN(raw) || raw <= 0) {
+    toast('\u26a0\ufe0f \u0395\u03b9\u03c3\u03ac\u03b3\u03b5\u03c4\u03b5 \u03ad\u03b3\u03ba\u03c5\u03c1\u03b7 \u03b1\u03c0\u03cc\u03c3\u03c4\u03b1\u03c3\u03b7 km', 'bad');
+    return;
+  }
+  foundKm = raw;   // set global so useKm() also works
+  useKm(multiplier || 1);
 }
 
 async function calcDist(from, to) {
@@ -2282,6 +2331,9 @@ async function calcDist(from, to) {
       var h = Math.floor(mins / 60), m = mins % 60;
       foundKm = parseFloat(km);
       setEl('m-dist', km + ' km');
+      // Pre-fill manual km input with OSRM distance
+      var mInp = document.getElementById('m-manual-km');
+      if (mInp && !mInp.value) { mInp.value = km; }
       setEl('m-dur', h > 0 ? h + '\u03c9 ' + m + '\u03bb' : m + ' \u03bb');
       var riEl = document.getElementById('m-ri');
       if (riEl) {
