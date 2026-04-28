@@ -766,7 +766,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">
         Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cfacaabdbba6a9a6acaebba6a0a18facb6acaabdbbe1a0bda8e1acb6">[email&#160;protected]</a>
+        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3c0c6d1d7cac5cac0c2d7cacccde3c0dac0c6d1d78dccd1c48dc0da">[email&#160;protected]</a>
       </div>
     </div>
     <div class="form-title-area">
@@ -1293,7 +1293,7 @@ function initMSAL() {
 
 async function getAccessToken() {
   if (!msalInstance) { throw new Error('MSAL δεν έχει αρχικοποιηθεί.'); }
-  var scopes = ['https://graph.microsoft.com/Mail.Send'];
+  var scopes = ['https://graph.microsoft.com/Mail.Send', 'https://graph.microsoft.com/Files.ReadWrite.All', 'https://graph.microsoft.com/Sites.ReadWrite.All'];
   var accounts = msalInstance.getAllAccounts();
   if (accounts.length > 0) {
     try {
@@ -1930,38 +1930,82 @@ function loadSpConfigUI() {
 }
 async function uploadToSharePoint(token, filename, blobOrArrayBuffer) {
   var cfg = getSpConfig();
-  if (!cfg.siteUrl) { console.warn('[CyCert] SharePoint not configured – skipping archive'); return; }
-  try {
-    var hostname = new URL(cfg.siteUrl).hostname;
-    var sitePath = new URL(cfg.siteUrl).pathname.replace(/^\/sites\//,'');
-    // Get site id
-    var siteRes = await fetch(
-      'https://graph.microsoft.com/v1.0/sites/' + hostname + ':/sites/' + sitePath,
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    if (!siteRes.ok) throw new Error('Cannot resolve SharePoint site: ' + siteRes.status);
-    var siteData = await siteRes.json();
-    var siteId = siteData.id;
-    // Build upload path
-    var lib    = (cfg.library || 'Shared Documents').replace(/\/$/,'');
-    var folder = (cfg.folder  || 'CyCert/Odoeporika').replace(/^\//, '').replace(/\/$/, '');
-    var uploadPath = lib + '/' + folder + '/' + filename;
-    // Upload
-    var uploadRes = await fetch(
-      'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drive/root:/' + encodeURIComponent(uploadPath) + ':/content',
-      {
-        method: 'PUT',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' },
-        body: blobOrArrayBuffer
-      }
-    );
-    if (!uploadRes.ok) throw new Error('Upload failed: ' + uploadRes.status);
-    var result = await uploadRes.json();
-    console.log('[CyCert] Archived to SharePoint:', result.webUrl);
-    return result.webUrl;
-  } catch(err) {
-    console.warn('[CyCert] SharePoint archive error:', err.message);
+  if (!cfg.siteUrl) {
+    console.warn('[CyCert] SharePoint not configured – skipping archive');
     return null;
+  }
+  try {
+    // ── Step 1: Resolve the SharePoint site ID ─────────────────
+    // Graph API format: GET /v1.0/sites/{hostname}:/{serverRelativePath}
+    var parsedUrl = new URL(cfg.siteUrl);
+    var hostname  = parsedUrl.hostname;                         // e.g. cycert.sharepoint.com
+    var srvPath   = parsedUrl.pathname.replace(/\/$/, '') || '/'; // e.g. /sites/Finance
+    // Normalise: strip leading slash for the :/path syntax
+    var siteRelPath = srvPath.replace(/^\//, '');              // e.g. sites/Finance
+
+    var siteApiUrl = 'https://graph.microsoft.com/v1.0/sites/' + hostname + ':/' + siteRelPath;
+    console.log('[CyCert] Resolving SP site:', siteApiUrl);
+
+    var siteRes = await fetch(siteApiUrl, {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+    });
+    if (!siteRes.ok) {
+      var errBody = await siteRes.text();
+      throw new Error('Site resolve failed ' + siteRes.status + ': ' + errBody.substring(0,200));
+    }
+    var siteData = await siteRes.json();
+    var siteId   = siteData.id;   // format: "hostname,site-guid,web-guid"
+    console.log('[CyCert] SP site ID:', siteId);
+
+    // ── Step 2: Get the document library drive ID ──────────────
+    var libName   = (cfg.library || 'Shared Documents').trim().replace(/\/+$/, '');
+    var drivesRes = await fetch(
+      'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drives',
+      { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }
+    );
+    if (!drivesRes.ok) throw new Error('Cannot list drives: ' + drivesRes.status);
+    var drivesData = await drivesRes.json();
+    var drive = drivesData.value.find(function(d) {
+      return d.name === libName || d.webUrl.endsWith('/' + encodeURIComponent(libName));
+    });
+    var driveId = drive ? drive.id : null;
+    console.log('[CyCert] SP drive:', driveId ? drive.name : 'using root (drive not found by name)');
+
+    // ── Step 3: Upload the file (auto-creates folder if needed) ─
+    var folder   = (cfg.folder || 'CyCert/Odoeporika').trim().replace(/^\/+/, '').replace(/\/+$/, '');
+    // Encode each segment individually so slashes in folder path are preserved
+    var filePath = folder
+      ? folder.split('/').concat([filename]).map(encodeURIComponent).join('/')
+      : encodeURIComponent(filename);
+
+    var uploadApiUrl;
+    if (driveId) {
+      uploadApiUrl = 'https://graph.microsoft.com/v1.0/drives/' + driveId + '/root:/' + filePath + ':/content';
+    } else {
+      uploadApiUrl = 'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drive/root:/' + filePath + ':/content';
+    }
+    console.log('[CyCert] SP upload URL:', uploadApiUrl);
+
+    var uploadRes = await fetch(uploadApiUrl, {
+      method:  'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type':  'application/octet-stream'
+      },
+      body: blobOrArrayBuffer
+    });
+    if (!uploadRes.ok) {
+      var upErr = await uploadRes.text();
+      throw new Error('Upload failed ' + uploadRes.status + ': ' + upErr.substring(0, 300));
+    }
+    var result = await uploadRes.json();
+    console.log('[CyCert] ✅ Archived to SharePoint:', result.webUrl);
+    return result.webUrl;
+
+  } catch(err) {
+    console.error('[CyCert] SharePoint archive error:', err.message);
+    // Re-throw so the caller can show the specific error to the user
+    throw err;
   }
 }
 async function sendWithM365() {
@@ -1973,7 +2017,8 @@ async function sendWithM365() {
     // Step 1: Generate PDF
     await sleep(200);
     var pdfDoc = await generateFormPDF();
-    var pdfB64 = pdfDoc.output('datauristring').split(',')[1];
+    var pdfB64   = pdfDoc.output('datauristring').split(',')[1];
+    var pdfBytes  = pdfDoc.output('arraybuffer');   // raw bytes for SharePoint upload
     var empName = ((document.getElementById('f-name') || {}).value || 'employee').replace(/\s+/g, '_');
     var period  = (document.getElementById('f-period') || {}).value || 'period';
     var pdfFilename = 'form_odoeporika_' + empName + '_' + period + '.pdf';
@@ -2053,11 +2098,17 @@ async function sendWithM365() {
     var b = document.getElementById('banner');
     if (b) { b.className = 'banner ok'; b.innerHTML = '\u2705 <span>Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03c3\u03c4\u03bf <strong>' + toAddr + '</strong></span>'; }
     toast('\ud83d\udce4 Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03ce\u03c2!', 'ok');
-        // Archive PDF + ZIP to SharePoint
-        try {
-          var spPdfUrl = await uploadToSharePoint(accessToken, pdfFilename, pdfBytes);
-          if (spPdfUrl) toast('\u2705 Archived to SharePoint', 'ok');
-        } catch(spErr) { console.warn('[CyCert] SP archive skipped:', spErr); }
+        // Archive PDF to SharePoint (if configured)
+        var spCfg = getSpConfig();
+        if (spCfg.siteUrl) {
+          try {
+            var spPdfUrl = await uploadToSharePoint(accessToken, pdfFilename, pdfBytes);
+            if (spPdfUrl) toast('\ud83d\udcc2 SharePoint: \u0391\u03c1\u03c7\u03b5\u03b9\u03bf\u03b8\u03b5\u03c4\u03ae\u03b8\u03b7\u03ba\u03b5!', 'ok');
+          } catch(spErr) {
+            console.error('[CyCert] SP upload failed:', spErr);
+            toast('\u26a0\ufe0f SharePoint error: ' + spErr.message.substring(0,80), 'bad');
+          }
+        }
 
   } catch (err) {
     console.error('[CyCert] M365 error:', err);
