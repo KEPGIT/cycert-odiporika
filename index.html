@@ -766,7 +766,7 @@ html,body{width:100%;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif
       <div class="co-name">Κυπριακή Εταιρεία Πιστοποίησης</div>
       <div class="co-addr">
         Γωνία Λεωφόρου Λεμεσού &amp; Κώστα Αναξαγόρου 30, 3ος Όροφος, 2014 Λευκωσία<br>
-        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3c0c6d1d7cac5cac0c2d7cacccde3c0dac0c6d1d78dccd1c48dc0da">[email&#160;protected]</a>
+        &#128222; +357 22411435 &nbsp;|&nbsp; &#128224; +357 22 519115 &nbsp;|&nbsp; &#9993;&#65039; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="07646275736e616e6466736e686947647e646275732968756029647e">[email&#160;protected]</a>
       </div>
     </div>
     <div class="form-title-area">
@@ -2098,17 +2098,21 @@ async function sendWithM365() {
     var b = document.getElementById('banner');
     if (b) { b.className = 'banner ok'; b.innerHTML = '\u2705 <span>Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03c3\u03c4\u03bf <strong>' + toAddr + '</strong></span>'; }
     toast('\ud83d\udce4 Email \u03b5\u03c3\u03c4\u03ac\u03bb\u03b7 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03ce\u03c2!', 'ok');
-        // Archive PDF to SharePoint (if configured)
-        var spCfg = getSpConfig();
-        if (spCfg.siteUrl) {
-          try {
-            var spPdfUrl = await uploadToSharePoint(accessToken, pdfFilename, pdfBytes);
-            if (spPdfUrl) toast('\ud83d\udcc2 SharePoint: \u0391\u03c1\u03c7\u03b5\u03b9\u03bf\u03b8\u03b5\u03c4\u03ae\u03b8\u03b7\u03ba\u03b5!', 'ok');
-          } catch(spErr) {
-            console.error('[CyCert] SP upload failed:', spErr);
-            toast('\u26a0\ufe0f SharePoint error: ' + spErr.message.substring(0,80), 'bad');
-          }
+
+    // ── SharePoint Archive (uses 'token' – the correct variable name) ──
+    var spCfg = getSpConfig();
+    if (spCfg && spCfg.siteUrl) {
+      try {
+        var spPdfUrl = await uploadToSharePoint(token, pdfFilename, pdfBytes);
+        if (spPdfUrl) {
+          toast('\ud83d\udcc2 SharePoint: \u0391\u03c1\u03c7\u03b5\u03b9\u03bf\u03b8\u03b5\u03c4\u03ae\u03b8\u03b7\u03ba\u03b5!', 'ok');
+          console.log('[CyCert] SP archive URL:', spPdfUrl);
         }
+      } catch(spErr) {
+        console.error('[CyCert] SP upload failed:', spErr);
+        toast('\u26a0\ufe0f SharePoint error: ' + spErr.message.substring(0, 100), 'bad');
+      }
+    }
 
   } catch (err) {
     console.error('[CyCert] M365 error:', err);
